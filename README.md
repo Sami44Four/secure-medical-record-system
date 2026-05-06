@@ -33,3 +33,4 @@ A secure web application for sharing medical records with encryption, role-based
 
 This comment was added by Sami to demonstrate pushing code to the repository.
 
+This comment was added by Maryam to demonstrate pushing code to the repository.
