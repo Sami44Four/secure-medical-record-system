@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Medical Record Sharing POC</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h2>MedSecure</h2>
+      <p>POC Demo</p>
+      <div class="badge">RBAC + Audit Logging</div>
+    </aside>
+
+    <main class="main">
+      <header>
+        <div>
+          <h1>Secure Medical Record Sharing System</h1>
+          <p>Role-based access control demonstration for sensitive medical files.</p>
+        </div>
+        <div id="currentUser" class="current-user">No user logged in</div>
+      </header>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Login Simulation</h2>
+          <p class="muted">Choose a role to simulate system access.</p>
+
+          <div class="user-buttons">
+            <button onclick="login('doctor')" class="doctor">Doctor Login</button>
+            <button onclick="login('nurse')" class="nurse">Nurse Login</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Security Controls</h2>
+          <div class="control"><span>Authentication</span><strong>Enabled</strong></div>
+          <div class="control"><span>RBAC</span><strong>Enabled</strong></div>
+          <div class="control"><span>Audit Logging</span><strong>Enabled</strong></div>
+        </div>
+      </section>
+
+      <section class="card record-card">
+        <div class="record-header">
+          <div>
+            <h2>Medical Record</h2>
+            <p class="muted">Protected file requiring doctor-level access.</p>
+          </div>
+          <span class="sensitive">Sensitive Asset</span>
+        </div>
+
+        <div class="record">
+          <div>
+            <h3>patient_record_1.pdf</h3>
+            <p>Required Role: <strong>Doctor</strong></p>
+          </div>
+          <button onclick="accessRecord()">View Record</button>
+        </div>
+
+        <div id="accessResult" class="result"></div>
+      </section>
+
+      <section class="card">
+        <h2>Audit Log</h2>
+        <p class="muted">System events are logged for accountability and threat detection.</p>
+        <ul id="auditLog" class="audit"></ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
