@@ -1,15 +1,15 @@
-#POC Demo
+# POC Demo
 
-##This frontend prototype demonstrates:
+This frontend prototype demonstrates:
 
-###Role-Based Access Control (RBAC)
-###Medical record access restrictions
-###Audit logging
+- Role-Based Access Control (RBAC)
+- Medical record access restrictions
+- Audit logging
 
-#Run Locally
+## Run Locally
 
-##Open:
+Open:
 
-###index.html
+`index.html`
 
 in a browser.
