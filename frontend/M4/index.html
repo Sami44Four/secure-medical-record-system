@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Medical Record Sharing System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h2>MedSecure</h2>
+      <p>M4 Beta Release</p>
+      <div class="badge">RBAC + Validation + Audit Logging</div>
+
+      <div id="navMenu" class="nav hidden">
+        <button onclick="showPage('dashboardPage')">Dashboard</button>
+        <button onclick="showPage('recordsPage')">Medical Records</button>
+        <button onclick="showPage('uploadPage')">Upload Record</button>
+        <button onclick="showPage('auditPage')">Audit Log</button>
+        <button id="adminStatsButton" class="hidden" onclick="showPage('adminStatsPage')">Admin Statistics</button>
+        <button class="logout" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header>
+        <div>
+          <h1>Secure Medical Record Sharing System</h1>
+          <p>Role-based access control for sensitive medical records.</p>
+        </div>
+
+        <div class="header-actions">
+          <button id="notificationBell" class="notification hidden" onclick="showNotifications()">🔔</button>
+          <div id="currentUser" class="current-user">No user logged in</div>
+        </div>
+      </header>
+
+      <section id="loginPage" class="grid">
+        <div class="card">
+          <h2>Secure Login</h2>
+          <p class="muted">Use a test account to access the beta system.</p>
+
+          <label>Username</label>
+          <input type="text" id="username" placeholder="doctor1" />
+
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Doctor123!" />
+
+          <div class="user-buttons">
+            <button onclick="handleLogin()" class="doctor">Sign In</button>
+            <button onclick="showCreateAccountMessage()" class="nurse">Create Account</button>
+          </div>
+
+          <button onclick="showForgotPasswordMessage()" class="linkButton">Forgot password?</button>
+
+          <div id="loginResult" class="result hidden"></div>
+
+          <p class="muted test-line">
+            Test Users: doctor1 / Doctor123!, nurse1 / Nurse123!, admin1 / Admin123!
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Security Controls</h2>
+          <div class="control"><span>Authentication</span><strong>Enabled</strong></div>
+          <div class="control"><span>Frontend RBAC</span><strong>Enabled</strong></div>
+          <div class="control"><span>Input Validation</span><strong>Enabled</strong></div>
+          <div class="control"><span>Audit Logging</span><strong>Enabled</strong></div>
+        </div>
+      </section>
+
+      <section id="protectedContent" class="hidden">
+
+        <section id="dashboardPage" class="page">
+          <div class="profile-grid">
+            <div class="card profile-card">
+              <div class="profile-top">
+                <div class="avatar" id="profileInitials">MS</div>
+                <div>
+                  <h2 id="profileName">User Name</h2>
+                  <p id="profileRole" class="muted">Role</p>
+                </div>
+              </div>
+
+              <div class="profile-details">
+                <div><span>Employee ID</span><strong id="employeeId"></strong></div>
+                <div><span>Department</span><strong id="department"></strong></div>
+                <div><span>Credentials</span><strong id="credentials"></strong></div>
+                <div><span>Years at Hospital</span><strong id="years"></strong></div>
+                <div><span>Last Login</span><strong id="lastLogin"></strong></div>
+                <div><span>MFA Status</span><strong id="mfaStatus">Enabled</strong></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Access Summary</h2>
+              <div class="control"><span>Total Records</span><strong id="totalRecords">0</strong></div>
+              <div class="control"><span>Access Level</span><strong id="accessLevel">None</strong></div>
+              <div class="control"><span>Session Status</span><strong id="sessionTimer">15:00 remaining</strong></div>
+              <div class="control"><span>Last Activity</span><strong id="lastActivity">No activity yet</strong></div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h2>Security Status</h2>
+              <div class="control"><span>Encryption at Rest</span><strong>AES-256 Enabled</strong></div>
+              <div class="control"><span>Transport Security</span><strong>TLS 1.3 Active</strong></div>
+              <div class="control"><span>Audit Monitoring</span><strong>Enabled</strong></div>
+              <div class="control"><span>SIEM Status</span><strong id="siemStatus">No active alerts</strong></div>
+            </div>
+
+            <div class="card">
+              <h2>Portal Overview</h2>
+              <p>
+                This beta release includes secure login, role-based dashboard,
+                medical record access controls, upload validation, access granted/denied messages,
+                audit logging, and a mock API layer ready for backend integration.
+              </p>
+              <p class="footer-note">
+                Records retention policy: Patient medical records are retained according to Washington State healthcare data retention guidelines and HIPAA compliance requirements.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="recordsPage" class="page hidden">
+          <div class="card record-card">
+            <div class="record-header">
+              <div>
+                <h2>Medical Records</h2>
+                <p class="muted">Only authorized roles can open protected records.</p>
+              </div>
+              <span class="sensitive">Sensitive Assets</span>
+            </div>
+
+            <input
+              type="text"
+              id="recordSearch"
+              placeholder="Search by patient, record ID, or record type..."
+              oninput="renderRecords()"
+            />
+
+            <div id="recordsList"></div>
+            <div id="accessResult" class="result hidden"></div>
+          </div>
+        </section>
+
+        <section id="uploadPage" class="page hidden">
+          <div class="card">
+            <h2>Upload Medical Record</h2>
+            <p class="muted">Only .pdf and .txt files are accepted in this beta release.</p>
+
+            <label>File Name</label>
+            <input type="text" id="fileName" placeholder="patient-record.pdf" />
+
+            <label>Patient Name</label>
+            <input type="text" id="patientName" placeholder="Amina Khan" />
+
+            <label>Record Type</label>
+            <input type="text" id="recordType" placeholder="Lab Results" />
+
+            <label>File Size</label>
+            <input type="text" id="fileSize" placeholder="2.4 MB" />
+
+            <button onclick="handleUpload()">Upload Record</button>
+
+            <div id="uploadResult" class="result hidden"></div>
+          </div>
+        </section>
+
+        <section id="auditPage" class="page hidden">
+          <div class="card">
+            <div class="record-header">
+              <div>
+                <h2>Audit Log</h2>
+                <p class="muted">System events are logged for accountability and threat detection.</p>
+              </div>
+              <button onclick="downloadAuditReport()">Download Audit Report</button>
+            </div>
+            <ul id="auditLog" class="audit"></ul>
+          </div>
+        </section>
+
+        <section id="adminStatsPage" class="page hidden">
+          <div class="card">
+            <h2>Admin Statistics</h2>
+            <p class="muted">Admin-only security and system activity overview.</p>
+
+            <div class="profile-details">
+              <div><span>Total Users</span><strong>3</strong></div>
+              <div><span>Total Records</span><strong>4</strong></div>
+              <div><span>Failed Login Attempts</span><strong id="failedLoginCount">0</strong></div>
+              <div><span>Denied Access Attempts</span><strong id="deniedAccessCount">0</strong></div>
+              <div><span>Uploaded Files</span><strong id="uploadedFileCount">0</strong></div>
+              <div><span>SIEM Alerts</span><strong id="siemAlertCount">0</strong></div>
+            </div>
+          </div>
+        </section>
+
+      </section>
+    </main>
+  </div>
+
+  <div id="recordModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeRecordModal()">×</button>
+      <h2 id="modalTitle">Medical Report</h2>
+      <p class="muted" id="modalSubtitle"></p>
+
+      <div class="fake-report">
+        <h3>Clinical Summary</h3>
+        <p id="modalSummary"></p>
+
+        <h3>Provider Notes</h3>
+        <p id="modalNotes"></p>
+
+        <h3>Security Notice</h3>
+        <p>This record is protected by role-based access control and every access attempt is logged.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="mfaModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>MFA Verification</h2>
+      <p class="muted">A verification code was sent to the user’s registered device.</p>
+
+      <label>Verification Code</label>
+      <input type="text" id="mfaCode" placeholder="123456" />
+
+      <button onclick="verifyMFA()">Verify</button>
+      <button class="close-btn-alt" onclick="cancelMFA()">Cancel</button>
+
+      <div id="mfaResult" class="result hidden"></div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

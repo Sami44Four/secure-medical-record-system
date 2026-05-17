@@ -1,0 +1,427 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eef3f8;
+  color: #1f2937;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background: linear-gradient(180deg, #0f172a, #1e3a8a);
+  color: white;
+  padding: 30px 24px;
+}
+
+.sidebar h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.sidebar p {
+  color: #cbd5e1;
+  margin-bottom: 25px;
+}
+
+.badge {
+  background: rgba(255,255,255,0.15);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.nav {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav button {
+  text-align: left;
+  background: rgba(255,255,255,0.12);
+}
+
+.nav button:hover {
+  background: rgba(255,255,255,0.22);
+}
+
+.logout {
+  background: #b91c1c !important;
+  margin-top: 30px;
+}
+
+.main {
+  flex: 1;
+  padding: 35px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+header h1 {
+  margin: 0;
+}
+
+header p,
+.muted {
+  color: #64748b;
+}
+
+.current-user {
+  background: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  font-weight: bold;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 22px;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.user-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+button {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  background: #2563eb;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.doctor {
+  background: #0f766e;
+}
+
+.nurse {
+  background: #7c3aed;
+}
+
+.control {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.control strong {
+  color: #059669;
+}
+
+.profile-top {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.profile-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.profile-details div {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.profile-details span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sensitive {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.record {
+  margin-top: 20px;
+  border: 1px solid #dbe3ea;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+}
+
+.result {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.denied {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.audit {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.audit li {
+  background: #f8fafc;
+  border-left: 4px solid #2563eb;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.linkButton {
+  background: transparent;
+  color: #2563eb;
+  padding-left: 0;
+  margin-top: 12px;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.role-pill {
+  background: #e0f2fe;
+  color: #075985;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.denied-button {
+  background: #64748b;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.test-line {
+  margin-top: 18px;
+  font-size: 14px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  width: 650px;
+  max-width: 90%;
+  border-radius: 18px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: #991b1b;
+  padding: 8px 12px;
+}
+
+.fake-report {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .grid,
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.footer-note {
+  margin-top: 18px;
+  font-weight: bold;
+  color: #1d4ed8;
+}
+
+.status-pill {
+  margin-left: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.status-pill.general {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pill.restricted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-pill.confidential {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification {
+  background: white;
+  color: #1d4ed8;
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  font-size: 20px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+.footer-note {
+  margin-top: 18px;
+  font-weight: bold;
+  color: #1d4ed8;
+}
+
+.status-pill {
+  margin-left: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.status-pill.general {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pill.restricted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-pill.confidential {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.close-btn-alt {
+  background: #64748b;
+  margin-left: 10px;
+}

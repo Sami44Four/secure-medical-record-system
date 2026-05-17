@@ -1,0 +1,13 @@
+module.exports = [
+  {
+    files: ["*.js"],
+    languageOptions: {
+      ecmaVersion: 2021,
+      sourceType: "script"
+    },
+    rules: {
+      semi: ["error", "always"],
+      quotes: ["error", "double"]
+    }
+  }
+];

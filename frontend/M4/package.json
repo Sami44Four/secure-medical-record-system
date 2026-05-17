@@ -1,0 +1,14 @@
+{
+  "name": "m4-beta-release-frontend",
+  "version": "1.0.0",
+  "description": "Frontend beta release for Secure Medical Record Sharing System",
+  "main": "script.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint *.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "jest": "^30.0.0"
+  }
+}
