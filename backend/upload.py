@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from logs import add_log
+from backend.logs import add_log
 import os
 
 UPLOAD_FOLDER = "uploads"
@@ -29,6 +29,7 @@ def upload_file():
         }), 400
 
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    os.makedirs("uploads", exist_ok=True)
 
     file.save(filepath)
     add_log(f"File uploaded: {file.filename}")

@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from werkzeug.security import check_password_hash
-from users import users
-from logs import add_log
+from backend.users import users
+from backend.logs import add_log
 
 def login():
     data = request.get_json()

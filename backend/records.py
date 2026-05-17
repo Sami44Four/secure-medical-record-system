@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from logs import add_log
+from backend.logs import add_log
 
 medical_records = [
     {

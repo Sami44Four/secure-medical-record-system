@@ -1,8 +1,8 @@
 from flask import Flask
-from auth import login
-from upload import upload_file
-from records import get_records
-from logs import get_logs
+from backend.auth import login
+from backend.upload import upload_file
+from backend.records import get_records
+from backend.logs import get_logs
 
 app = Flask(__name__)
 
