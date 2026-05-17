@@ -18,6 +18,41 @@ A secure web application for sharing medical records with encryption, role-based
 * Least privilege access
 * Accountability through logging
 
+## Setup
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+## Run 
+
+python3 backend/app.py
+
+## Run Tests
+
+pytest
+
+## Run Static Analysis
+
+bandit -r backend
+
+## Example API Requests
+## Login
+
+curl -X POST http://127.0.0.1:5000/api/login \
+-H "Content-Type: application/json" \
+-d '{"username":"doctor1","password":"doctor123"}'
+
+## Get Records
+
+curl -X GET http://127.0.0.1:5000/api/records \
+-H "Role: doctor"
+
+## View Audit Logs
+
+curl http://127.0.0.1:5000/api/audit-logs
+
+
 ## Tech Stack
 
 (To be determined)
