@@ -185,7 +185,7 @@ async function renderRecords() {
   });
 
   if (filteredRecords.length === 0) {
-    recordsList.innerHTML = `<p class="muted">No records match your search or your role permissions.</p>`;
+    recordsList.innerHTML = "<p class=\"muted\">No records match your search or your role permissions.</p>";
   }
 }
 
