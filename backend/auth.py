@@ -12,15 +12,24 @@ def login():
     user = users.get(username)
 
     if user and check_password_hash(user["password"], password):
-
-        add_log(f"{username} logged in successfully")
+        add_log(username, f"{user['role']} logged in successfully", "Success")
 
         return jsonify({
             "message": "Login successful",
-            "role": user["role"]
+            "user": {
+                "username": username,
+                "role": user["role"],
+                "fullName": user["fullName"],
+                "employeeId": user["employeeId"],
+                "department": user["department"],
+                "credentials": user["credentials"],
+                "years": user["years"],
+                "lastLogin": user["lastLogin"],
+                "mfaStatus": user["mfaStatus"]
+            }
         })
 
-    add_log(f"Failed login attempt for username: {username}")
+    add_log(username or "unknown", "Failed login attempt", "Denied")
 
     return jsonify({
         "message": "Invalid credentials"
