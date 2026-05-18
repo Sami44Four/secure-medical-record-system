@@ -5,7 +5,6 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-ci.yml"
-
   pull_request:
     paths:
       - "frontend/**"
@@ -29,10 +28,12 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install --save-dev jest eslint
 
       - name: Run unit tests
-        run: npm test
+        run: npx jest
 
       - name: Run ESLint static analysis
-        run: npm run lint
+        run: npx eslint *.js
