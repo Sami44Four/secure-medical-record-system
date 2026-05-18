@@ -228,3 +228,13 @@ function addAuditLog(user, action, status) {
 function getAuditLogs() {
   return localAuditLogs;
 }
+
+window.apiLogin = apiLogin;
+window.apiGetRecords = apiGetRecords;
+window.apiUploadRecord = apiUploadRecord;
+window.apiGetAuditLogs = apiGetAuditLogs;
+window.getMedicalRecords = getMedicalRecords;
+window.addAuditLog = addAuditLog;
+window.getAuditLogs = getAuditLogs;
+
+console.log("api.js loaded successfully");
