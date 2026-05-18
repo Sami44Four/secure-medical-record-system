@@ -9,7 +9,7 @@ let siemAlerts = 0;
 let sessionSeconds = 900;
 let sessionInterval;
 
-function handleLogin() {
+async function handleLogin() {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
   const loginResult = document.getElementById("loginResult");
@@ -19,7 +19,7 @@ function handleLogin() {
     return;
   }
 
-  const user = mockLogin(username, password);
+  const user = await apiLogin(username, password);
 
   if (!user) {
     failedLoginAttempts++;
@@ -34,8 +34,11 @@ function handleLogin() {
 
     if (failedLoginAttempts >= 3) {
       siemAlerts++;
-      document.getElementById("siemStatus").textContent =
-        "Suspicious login activity detected";
+      const siemStatus = document.getElementById("siemStatus");
+
+      if (siemStatus) {
+        siemStatus.textContent = "Suspicious login activity detected";
+      }
     }
 
     renderAuditLog();
@@ -48,23 +51,18 @@ function handleLogin() {
   document.getElementById("mfaModal").classList.remove("hidden");
 }
 
-function verifyMFA() {
+async function verifyMFA() {
   const code = document.getElementById("mfaCode").value.trim();
   const mfaResult = document.getElementById("mfaResult");
 
   if (code !== "123456") {
-    showMessage(
-      mfaResult,
-      "Invalid MFA code.",
-      "denied"
-    );
+    showMessage(mfaResult, "Invalid MFA code.", "denied");
     return;
   }
 
   currentUser = pendingUser;
 
   document.getElementById("mfaModal").classList.add("hidden");
-
   document.getElementById("loginPage").classList.add("hidden");
   document.getElementById("protectedContent").classList.remove("hidden");
   document.getElementById("navMenu").classList.remove("hidden");
@@ -80,7 +78,7 @@ function verifyMFA() {
   );
 
   renderProfile();
-  renderRecords();
+  await renderRecords();
   renderAuditLog();
   updateAdminStats();
 
@@ -91,7 +89,6 @@ function verifyMFA() {
   }
 
   showPage("dashboardPage");
-
   startSessionTimer();
 }
 
@@ -100,32 +97,15 @@ function cancelMFA() {
 }
 
 function renderProfile() {
-  document.getElementById("profileName").textContent =
-    currentUser.fullName;
-
-  document.getElementById("profileRole").textContent =
-    currentUser.role.toUpperCase();
-
-  document.getElementById("employeeId").textContent =
-    currentUser.employeeId;
-
-  document.getElementById("department").textContent =
-    currentUser.department;
-
-  document.getElementById("credentials").textContent =
-    currentUser.credentials;
-
-  document.getElementById("years").textContent =
-    currentUser.years;
-
-  document.getElementById("lastLogin").textContent =
-    currentUser.lastLogin;
-
-  document.getElementById("mfaStatus").textContent =
-    currentUser.mfaStatus;
-
-  document.getElementById("totalRecords").textContent =
-    getMedicalRecords().length;
+  document.getElementById("profileName").textContent = currentUser.fullName;
+  document.getElementById("profileRole").textContent = currentUser.role.toUpperCase();
+  document.getElementById("employeeId").textContent = currentUser.employeeId;
+  document.getElementById("department").textContent = currentUser.department;
+  document.getElementById("credentials").textContent = currentUser.credentials;
+  document.getElementById("years").textContent = currentUser.years;
+  document.getElementById("lastLogin").textContent = currentUser.lastLogin;
+  document.getElementById("mfaStatus").textContent = currentUser.mfaStatus;
+  document.getElementById("totalRecords").textContent = getMedicalRecords().length;
 
   document.getElementById("profileInitials").textContent =
     currentUser.fullName
@@ -135,14 +115,11 @@ function renderProfile() {
       .slice(0, 2);
 
   if (currentUser.role === "admin") {
-    document.getElementById("accessLevel").textContent =
-      "Full system access";
+    document.getElementById("accessLevel").textContent = "Full system access";
   } else if (currentUser.role === "doctor") {
-    document.getElementById("accessLevel").textContent =
-      "Doctor-level records";
+    document.getElementById("accessLevel").textContent = "Doctor-level records";
   } else {
-    document.getElementById("accessLevel").textContent =
-      "Nurse-level records";
+    document.getElementById("accessLevel").textContent = "Nurse-level records";
   }
 }
 
@@ -156,19 +133,18 @@ function showPage(pageId) {
   document.getElementById(pageId).classList.remove("hidden");
 }
 
-function renderRecords() {
-  const recordsList =
-    document.getElementById("recordsList");
-
-  const searchInput =
-    document.getElementById("recordSearch");
-
-  const searchText =
-    searchInput.value.toLowerCase();
+async function renderRecords() {
+  const recordsList = document.getElementById("recordsList");
+  const searchInput = document.getElementById("recordSearch");
+  const searchText = searchInput ? searchInput.value.toLowerCase() : "";
 
   recordsList.innerHTML = "";
 
-  const filteredRecords = getMedicalRecords().filter(record => {
+  const records = await apiGetRecords(currentUser);
+
+  document.getElementById("totalRecords").textContent = records.length;
+
+  const filteredRecords = records.filter(record => {
     return (
       record.id.toLowerCase().includes(searchText) ||
       record.patient.toLowerCase().includes(searchText) ||
@@ -180,7 +156,6 @@ function renderRecords() {
     const isAuthorized = canAccessRecord(record);
 
     const recordDiv = document.createElement("div");
-
     recordDiv.className = "record";
 
     recordDiv.innerHTML = `
@@ -208,6 +183,10 @@ function renderRecords() {
 
     recordsList.appendChild(recordDiv);
   });
+
+  if (filteredRecords.length === 0) {
+    recordsList.innerHTML = `<p class="muted">No records match your search or your role permissions.</p>`;
+  }
 }
 
 function canAccessRecord(record) {
@@ -222,11 +201,13 @@ function canAccessRecord(record) {
 }
 
 function handleRecordAccess(recordId) {
-  const accessResult =
-    document.getElementById("accessResult");
+  const accessResult = document.getElementById("accessResult");
+  const record = getMedicalRecords().find(item => item.id === recordId);
 
-  const record =
-    getMedicalRecords().find(item => item.id === recordId);
+  if (!record) {
+    showMessage(accessResult, "Record not found or unavailable for this role.", "denied");
+    return;
+  }
 
   if (!canAccessRecord(record)) {
     deniedAccessAttempts++;
@@ -261,12 +242,8 @@ function handleRecordAccess(recordId) {
   );
 
   openRecordModal(record);
-
   renderAuditLog();
-
-  updateLastActivity(
-    `Opened record ${record.id}`
-  );
+  updateLastActivity(`Opened record ${record.id}`);
 }
 
 function openRecordModal(record) {
@@ -276,36 +253,22 @@ function openRecordModal(record) {
   document.getElementById("modalSubtitle").textContent =
     `${record.type} | Classification: ${record.status}`;
 
-  document.getElementById("modalSummary").textContent =
-    record.summary;
+  document.getElementById("modalSummary").textContent = record.summary;
+  document.getElementById("modalNotes").textContent = record.notes;
 
-  document.getElementById("modalNotes").textContent =
-    record.notes;
-
-  document.getElementById("recordModal")
-    .classList.remove("hidden");
+  document.getElementById("recordModal").classList.remove("hidden");
 }
 
 function closeRecordModal() {
-  document.getElementById("recordModal")
-    .classList.add("hidden");
+  document.getElementById("recordModal").classList.add("hidden");
 }
 
-function handleUpload() {
-  const fileName =
-    document.getElementById("fileName").value.trim();
-
-  const patientName =
-    document.getElementById("patientName").value.trim();
-
-  const recordType =
-    document.getElementById("recordType").value.trim();
-
-  const fileSize =
-    document.getElementById("fileSize").value.trim();
-
-  const uploadResult =
-    document.getElementById("uploadResult");
+async function handleUpload() {
+  const fileName = document.getElementById("fileName").value.trim();
+  const patientName = document.getElementById("patientName").value.trim();
+  const recordType = document.getElementById("recordType").value.trim();
+  const fileSize = document.getElementById("fileSize").value.trim();
+  const uploadResult = document.getElementById("uploadResult");
 
   if (
     fileName === "" ||
@@ -335,33 +298,44 @@ function handleUpload() {
     return;
   }
 
-  uploadedFiles++;
-
-  addAuditLog(
-    currentUser.username,
-    `Uploaded ${fileName} (${fileSize}) for ${patientName}`,
-    "Success"
+  const uploadResponse = await apiUploadRecord(
+    currentUser,
+    fileName,
+    patientName,
+    recordType,
+    fileSize
   );
+
+  if (!uploadResponse.ok) {
+    showMessage(
+      uploadResult,
+      `Upload failed: ${uploadResponse.data.message}`,
+      "denied"
+    );
+
+    return;
+  }
+
+  uploadedFiles++;
 
   showMessage(
     uploadResult,
-    `Upload successful: ${fileName} added for ${patientName}. File marked for AES-256 encryption before storage.`,
+    `Upload successful: ${uploadResponse.data.filename} added for ${patientName}. File marked for AES-256 encryption before storage.`,
     "success"
   );
 
   renderAuditLog();
-
   updateAdminStats();
+  updateLastActivity(`Uploaded ${fileName}`);
 
-  updateLastActivity(
-    `Uploaded ${fileName}`
-  );
+  document.getElementById("fileName").value = "";
+  document.getElementById("patientName").value = "";
+  document.getElementById("recordType").value = "";
+  document.getElementById("fileSize").value = "";
 }
 
 function renderAuditLog() {
-  const auditLog =
-    document.getElementById("auditLog");
-
+  const auditLog = document.getElementById("auditLog");
   auditLog.innerHTML = "";
 
   getAuditLogs().forEach(log => {
@@ -375,17 +349,10 @@ function renderAuditLog() {
 }
 
 function updateAdminStats() {
-  const failed =
-    document.getElementById("failedLoginCount");
-
-  const denied =
-    document.getElementById("deniedAccessCount");
-
-  const uploaded =
-    document.getElementById("uploadedFileCount");
-
-  const alerts =
-    document.getElementById("siemAlertCount");
+  const failed = document.getElementById("failedLoginCount");
+  const denied = document.getElementById("deniedAccessCount");
+  const uploaded = document.getElementById("uploadedFileCount");
+  const alerts = document.getElementById("siemAlertCount");
 
   if (failed) failed.textContent = failedLoginAttempts;
   if (denied) denied.textContent = deniedAccessAttempts;
@@ -406,8 +373,7 @@ function downloadAuditReport() {
 }
 
 function updateLastActivity(activity) {
-  document.getElementById("lastActivity").textContent =
-    activity;
+  document.getElementById("lastActivity").textContent = activity;
 }
 
 function startSessionTimer() {
@@ -418,20 +384,15 @@ function startSessionTimer() {
   sessionInterval = setInterval(() => {
     sessionSeconds--;
 
-    const minutes =
-      Math.floor(sessionSeconds / 60);
-
-    const seconds =
-      sessionSeconds % 60;
+    const minutes = Math.floor(sessionSeconds / 60);
+    const seconds = sessionSeconds % 60;
 
     document.getElementById("sessionTimer").textContent =
       `${minutes}:${seconds.toString().padStart(2, "0")} remaining`;
 
     if (sessionSeconds <= 0) {
       clearInterval(sessionInterval);
-
       alert("Session expired.");
-
       logout();
     }
   }, 1000);
@@ -439,26 +400,23 @@ function startSessionTimer() {
 
 function logout() {
   currentUser = null;
+  pendingUser = null;
 
-  document.getElementById("loginPage")
-    .classList.remove("hidden");
+  clearInterval(sessionInterval);
 
-  document.getElementById("protectedContent")
-    .classList.add("hidden");
+  document.getElementById("loginPage").classList.remove("hidden");
+  document.getElementById("protectedContent").classList.add("hidden");
+  document.getElementById("navMenu").classList.add("hidden");
+  document.getElementById("notificationBell").classList.add("hidden");
+  document.getElementById("currentUser").textContent = "No user logged in";
 
-  document.getElementById("navMenu")
-    .classList.add("hidden");
-
-  document.getElementById("notificationBell")
-    .classList.add("hidden");
-
-  document.getElementById("currentUser").textContent =
-    "No user logged in";
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+  document.getElementById("mfaCode").value = "";
 }
 
 function showCreateAccountMessage() {
-  const loginResult =
-    document.getElementById("loginResult");
+  const loginResult = document.getElementById("loginResult");
 
   showMessage(
     loginResult,
@@ -468,8 +426,7 @@ function showCreateAccountMessage() {
 }
 
 function showForgotPasswordMessage() {
-  const loginResult =
-    document.getElementById("loginResult");
+  const loginResult = document.getElementById("loginResult");
 
   showMessage(
     loginResult,
