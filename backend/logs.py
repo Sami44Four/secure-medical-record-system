@@ -3,12 +3,14 @@ from datetime import datetime
 
 audit_logs = []
 
-def add_log(message):
+def add_log(user, action, status):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     audit_logs.insert(0, {
-        "timestamp": timestamp,
-        "message": message
+        "time": timestamp,
+        "user": user,
+        "action": action,
+        "status": status
     })
 
 def get_logs():
