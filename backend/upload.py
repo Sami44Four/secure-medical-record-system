@@ -2,7 +2,9 @@ from flask import request, jsonify
 from backend.logs import add_log
 import os
 
-UPLOAD_FOLDER = "uploads"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "..", "uploads")
+UPLOAD_FOLDER = os.path.abspath(UPLOAD_FOLDER)
 ALLOWED_EXTENSIONS = {"pdf", "txt"}
 
 def allowed_file(filename):
