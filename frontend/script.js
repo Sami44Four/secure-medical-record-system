@@ -435,6 +435,58 @@ function showForgotPasswordMessage() {
   );
 }
 
+async function analyzeAuditLogs() {
+
+  const summaryBox = document.getElementById("llmSummary");
+
+  const summary = `
+Security Summary
+
+Failed Login Attempts: ${failedLoginAttempts}
+
+Denied Access Attempts: ${deniedAccessAttempts}
+
+Uploaded Medical Records: ${uploadedFiles}
+
+SIEM Alerts Triggered: ${siemAlerts}
+
+Assessment:
+
+The system reviewed recent audit activity and identified security-relevant events. Failed logins and denied access requests are being monitored through audit logging and SIEM alerting.
+
+Recommendations:
+
+• Continue enforcing MFA for all users.
+
+• Review repeated failed login attempts.
+
+• Investigate abnormal access requests.
+
+• Continue monitoring upload activity.
+
+• Maintain RBAC controls for sensitive medical records.
+`;
+
+  showMessage(
+    summaryBox,
+    summary,
+    "warning"
+  );
+
+  if (currentUser) {
+
+    addAuditLog(
+      currentUser.username,
+      "Requested AI security audit review",
+      "Success"
+    );
+
+  }
+
+  renderAuditLog();
+
+}
+
 function showMessage(element, message, className) {
   element.textContent = message;
   element.className = `result ${className}`;

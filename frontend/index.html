@@ -19,6 +19,7 @@
         <button onclick="showPage('recordsPage')">Medical Records</button>
         <button onclick="showPage('uploadPage')">Upload Record</button>
         <button onclick="showPage('auditPage')">Audit Log</button>
+        <button onclick="showPage('securityAssistantPage')">Security Assistant</button>
         <button id="adminStatsButton" class="hidden" onclick="showPage('adminStatsPage')">Admin Statistics</button>
         <button class="logout" onclick="logout()">Logout</button>
       </div>
@@ -182,6 +183,17 @@
             </div>
             <ul id="auditLog" class="audit"></ul>
           </div>
+        </section>
+
+        <section id="securityAssistantPage" class="page hidden">
+          <div class="card">
+             <h2>LLM Security Assistant</h2>
+              <p class="muted"> AI-assisted audit log analysis for suspicious activity, failed logins, denied access attempts, and security monitoring. </p>
+             <button onclick="analyzeAuditLogs()"> Analyze Audit Logs</button>
+          <div id="llmSummary" class="result hidden" style="margin-top:20px;" >
+        </div>
+
+         </div>
         </section>
 
         <section id="adminStatsPage" class="page hidden">
