@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from werkzeug.security import check_password_hash
-from backend.users import users
+from backend.db import get_db_connection
 from backend.logs import add_log
 
 def login():
@@ -9,23 +9,26 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    user = users.get(username)
+    conn = get_db_connection()
 
-    if user and check_password_hash(user["password"], password):
+    user = conn.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,)
+    ).fetchone()
+
+    conn.close()
+
+    if user and check_password_hash(user["password_hash"], password):
+
         add_log(username, f"{user['role']} logged in successfully", "Success")
 
         return jsonify({
             "message": "Login successful",
             "user": {
-                "username": username,
+                "username": user["username"],
                 "role": user["role"],
-                "fullName": user["fullName"],
-                "employeeId": user["employeeId"],
-                "department": user["department"],
-                "credentials": user["credentials"],
-                "years": user["years"],
-                "lastLogin": user["lastLogin"],
-                "mfaStatus": user["mfaStatus"]
+                "fullName": user["full_name"],
+                "department": user["department"]
             }
         })
 

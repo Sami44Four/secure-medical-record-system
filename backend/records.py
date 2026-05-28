@@ -1,55 +1,46 @@
 from flask import request, jsonify
 from backend.logs import add_log
-
-medical_records = [
-    {
-        "id": "MR-101",
-        "patient": "Amina Khan",
-        "type": "General Checkup",
-        "requiredRole": "nurse",
-        "status": "General",
-        "summary": "Patient came in for a routine wellness check. Vital signs were normal.",
-        "notes": "Continue normal care plan. Follow up recommended in 6 months."
-    },
-    {
-        "id": "MR-205",
-        "patient": "David Lee",
-        "type": "Surgery Notes",
-        "requiredRole": "doctor",
-        "status": "Restricted",
-        "summary": "Post-surgical recovery notes for a minor outpatient procedure.",
-        "notes": "Wound site appears stable. Patient should avoid heavy activity for 2 weeks."
-    },
-    {
-        "id": "MR-310",
-        "patient": "Fatima Noor",
-        "type": "Prescription Update",
-        "requiredRole": "nurse",
-        "status": "General",
-        "summary": "Medication dosage update reviewed during patient visit.",
-        "notes": "Patient reported no serious side effects. Monitor symptoms for 30 days."
-    },
-    {
-        "id": "MR-450",
-        "patient": "Michael Smith",
-        "type": "Confidential Specialist Report",
-        "requiredRole": "doctor",
-        "status": "Confidential",
-        "summary": "Specialist report containing sensitive diagnostic notes.",
-        "notes": "Restricted to doctor-level access due to confidential medical findings."
-    }
-]
+from backend.db import get_db_connection
 
 def get_records():
     role = request.headers.get("Role")
     username = request.headers.get("Username", "unknown")
 
-    visible_records = []
+    conn = get_db_connection()
 
-    for record in medical_records:
-        if role == "admin" or role == record["requiredRole"]:
-            visible_records.append(record)
+    # RBAC query
+    if role == "doctor":
+        records = conn.execute("""
+            SELECT * FROM medical_records
+        """).fetchall()
+
+    elif role == "nurse":
+        records = conn.execute("""
+            SELECT * FROM medical_records
+            WHERE access_level = 'nurse'
+        """).fetchall()
+
+    elif role == "admin":
+        records = conn.execute("""
+            SELECT * FROM medical_records
+        """).fetchall()
+
+        add_log(
+            username,
+            "Admin accessed all medical records (monitored access)",
+            "Warning"
+        )
+
+        conn.close()
+        return jsonify([dict(r) for r in records])
+
+    else:
+        conn.close()
+        add_log(username, "Unauthorized role attempted record access", "Denied")
+        return jsonify({"message": "Unauthorized role"}), 403
+
+    conn.close()
 
     add_log(username, f"Fetched records for role: {role}", "Success")
 
-    return jsonify(visible_records)
+    return jsonify([dict(r) for r in records])

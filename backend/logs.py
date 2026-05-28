@@ -1,17 +1,26 @@
 from flask import jsonify
-from datetime import datetime
+from backend.db import get_db_connection
 
-audit_logs = []
+def add_log(username, action, status):
+    conn = get_db_connection()
 
-def add_log(user, action, status):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute("""
+        INSERT INTO audit_logs (timestamp, username, action, status)
+        VALUES (CURRENT_TIMESTAMP, ?, ?, ?)
+    """, (username, action, status))
 
-    audit_logs.insert(0, {
-        "time": timestamp,
-        "user": user,
-        "action": action,
-        "status": status
-    })
+    conn.commit()
+    conn.close()
+
 
 def get_logs():
-    return jsonify(audit_logs)
+    conn = get_db_connection()
+
+    logs = conn.execute("""
+        SELECT * FROM audit_logs
+        ORDER BY timestamp DESC
+    """).fetchall()
+
+    conn.close()
+
+    return jsonify([dict(log) for log in logs])
