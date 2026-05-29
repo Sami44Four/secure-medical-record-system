@@ -11,8 +11,8 @@
   <div class="app">
     <aside class="sidebar">
       <h2>MedSecure</h2>
-      <p>M4 Beta Release</p>
-      <div class="badge">RBAC + Validation + Audit Logging</div>
+      <p>Final Release</p>
+      <div class="badge">RBAC + Validation + Audit Logging + AI Security Review</div>
 
       <div id="navMenu" class="nav hidden">
         <button onclick="showPage('dashboardPage')">Dashboard</button>
@@ -28,8 +28,8 @@
     <main class="main">
       <header>
         <div>
-          <h1>Secure Medical Record Sharing System</h1>
-          <p>Role-based access control for sensitive medical records.</p>
+          <h1>Secure Medical Record Management System</h1>
+          <p>Role-based access control for sensitive patient medical records.</p>
         </div>
 
         <div class="header-actions">
@@ -41,7 +41,7 @@
       <section id="loginPage" class="grid">
         <div class="card">
           <h2>Secure Login</h2>
-          <p class="muted">Use a test account to access the beta system.</p>
+          <p class="muted">Use a test account to access the final release system.</p>
 
           <label>Username</label>
           <input type="text" id="username" placeholder="doctor1" />
@@ -69,6 +69,7 @@
           <div class="control"><span>Frontend RBAC</span><strong>Enabled</strong></div>
           <div class="control"><span>Input Validation</span><strong>Enabled</strong></div>
           <div class="control"><span>Audit Logging</span><strong>Enabled</strong></div>
+          <div class="control"><span>AI Security Review</span><strong>Enabled</strong></div>
         </div>
       </section>
 
@@ -97,7 +98,7 @@
 
             <div class="card">
               <h2>Access Summary</h2>
-              <div class="control"><span>Total Records</span><strong id="totalRecords">0</strong></div>
+              <div class="control"><span>Total Medical Records</span><strong id="totalRecords">0</strong></div>
               <div class="control"><span>Access Level</span><strong id="accessLevel">None</strong></div>
               <div class="control"><span>Session Status</span><strong id="sessionTimer">15:00 remaining</strong></div>
               <div class="control"><span>Last Activity</span><strong id="lastActivity">No activity yet</strong></div>
@@ -116,9 +117,9 @@
             <div class="card">
               <h2>Portal Overview</h2>
               <p>
-                This beta release includes secure login, role-based dashboard,
-                medical record access controls, upload validation, access granted/denied messages,
-                audit logging, and a mock API layer ready for backend integration.
+                This final release focuses on secure medical record management, including
+                authenticated access, role-based medical record visibility, protected upload validation,
+                persistent audit logging, and AI-assisted security review for administrators.
               </p>
               <p class="footer-note">
                 Records retention policy: Patient medical records are retained according to Washington State healthcare data retention guidelines and HIPAA compliance requirements.
@@ -132,15 +133,15 @@
             <div class="record-header">
               <div>
                 <h2>Medical Records</h2>
-                <p class="muted">Only authorized roles can open protected records.</p>
+                <p class="muted">Only authorized roles can view protected patient record details.</p>
               </div>
-              <span class="sensitive">Sensitive Assets</span>
+              <span class="sensitive">Sensitive Health Data</span>
             </div>
 
             <input
               type="text"
               id="recordSearch"
-              placeholder="Search by patient, record ID, or record type..."
+              placeholder="Search by patient, record ID, diagnosis, or record type..."
               oninput="renderRecords()"
             />
 
@@ -152,10 +153,10 @@
         <section id="uploadPage" class="page hidden">
           <div class="card">
             <h2>Upload Medical Record</h2>
-            <p class="muted">Only .pdf and .txt files are accepted in this beta release.</p>
+            <p class="muted">Only .pdf and .txt medical record documents are accepted in this release.</p>
 
-            <label>File Name</label>
-            <input type="text" id="fileName" placeholder="patient-record.pdf" />
+            <label>Medical Record File Name</label>
+            <input type="text" id="fileName" placeholder="patient-lab-results.pdf" />
 
             <label>Patient Name</label>
             <input type="text" id="patientName" placeholder="Amina Khan" />
@@ -163,10 +164,10 @@
             <label>Record Type</label>
             <input type="text" id="recordType" placeholder="Lab Results" />
 
-            <label>File Size</label>
+            <label>Record File Size</label>
             <input type="text" id="fileSize" placeholder="2.4 MB" />
 
-            <button onclick="handleUpload()">Upload Record</button>
+            <button onclick="handleUpload()">Upload Medical Record</button>
 
             <div id="uploadResult" class="result hidden"></div>
           </div>
@@ -177,7 +178,7 @@
             <div class="record-header">
               <div>
                 <h2>Audit Log</h2>
-                <p class="muted">System events are logged for accountability and threat detection.</p>
+                <p class="muted">System events are logged for accountability, monitoring, and threat detection.</p>
               </div>
               <button onclick="downloadAuditReport()">Download Audit Report</button>
             </div>
@@ -187,13 +188,27 @@
 
         <section id="securityAssistantPage" class="page hidden">
           <div class="card">
-             <h2>LLM Security Assistant</h2>
-              <p class="muted"> AI-assisted audit log analysis for suspicious activity, failed logins, denied access attempts, and security monitoring. </p>
-             <button onclick="analyzeAuditLogs()"> Analyze Audit Logs</button>
-          <div id="llmSummary" class="result hidden" style="margin-top:20px;" >
-        </div>
+            <div class="record-header">
+              <div>
+                <h2>LLM Security Assistant</h2>
+                <p class="muted">
+                  AI-assisted audit log analysis for suspicious activity, failed logins,
+                  denied access attempts, and administrator security summaries.
+                </p>
+              </div>
+              <span class="sensitive">Admin Review</span>
+            </div>
 
-         </div>
+            <p>
+              The Security Assistant reviews recent audit activity and generates a short
+              administrator-facing summary. It does not make access decisions. Backend RBAC
+              remains responsible for authentication and authorization enforcement.
+            </p>
+
+            <button onclick="analyzeAuditLogs()">Analyze Audit Logs</button>
+
+            <div id="llmSummary" class="result hidden" style="margin-top:20px;"></div>
+          </div>
         </section>
 
         <section id="adminStatsPage" class="page hidden">
@@ -203,10 +218,10 @@
 
             <div class="profile-details">
               <div><span>Total Users</span><strong>3</strong></div>
-              <div><span>Total Records</span><strong>4</strong></div>
+              <div><span>Total Medical Records</span><strong>4</strong></div>
               <div><span>Failed Login Attempts</span><strong id="failedLoginCount">0</strong></div>
               <div><span>Denied Access Attempts</span><strong id="deniedAccessCount">0</strong></div>
-              <div><span>Uploaded Files</span><strong id="uploadedFileCount">0</strong></div>
+              <div><span>Uploaded Medical Records</span><strong id="uploadedFileCount">0</strong></div>
               <div><span>SIEM Alerts</span><strong id="siemAlertCount">0</strong></div>
             </div>
           </div>
@@ -219,7 +234,7 @@
   <div id="recordModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-btn" onclick="closeRecordModal()">×</button>
-      <h2 id="modalTitle">Medical Report</h2>
+      <h2 id="modalTitle">Medical Record</h2>
       <p class="muted" id="modalSubtitle"></p>
 
       <div class="fake-report">
