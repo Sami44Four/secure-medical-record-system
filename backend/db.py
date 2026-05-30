@@ -1,6 +1,8 @@
 import sqlite3
+import os
 
-DATABASE = "backend/medical.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "medical.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)

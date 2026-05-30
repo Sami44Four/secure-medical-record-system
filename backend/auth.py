@@ -25,11 +25,17 @@ def login():
         return jsonify({
             "message": "Login successful",
             "user": {
-                "username": user["username"],
-                "role": user["role"],
-                "fullName": user["full_name"],
-                "department": user["department"]
+            "username": user["username"],
+            "role": user["role"],
+            "fullName": user["full_name"],
+            "department": user["department"],
+            "employeeId": user["employee_id"],
+            "credentials": user["credentials"],
+            "years": user["years"],
+            "lastLogin": user["last_login"],
+            "mfaStatus": "Enabled"
             }
+
         })
 
     add_log(username or "unknown", "Failed login attempt", "Denied")
