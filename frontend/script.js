@@ -31,7 +31,9 @@ async function handleLogin() {
     if (failedLoginAttempts >= 3) {
       siemAlerts++;
       const siemStatus = document.getElementById("siemStatus");
-      if (siemStatus) siemStatus.textContent = "Suspicious login activity detected";
+      if (siemStatus) {
+        siemStatus.textContent = "Suspicious login activity detected";
+      }
     }
 
     renderAuditLog();
@@ -70,11 +72,7 @@ async function verifyMFA() {
   renderAuditLog();
   updateAdminStats();
 
-  if (currentUser.role === "admin") {
-    document.getElementById("adminStatsButton").classList.remove("hidden");
-  } else {
-    document.getElementById("adminStatsButton").classList.add("hidden");
-  }
+  configureRoleNavigation();
 
   showPage("dashboardPage");
   startSessionTimer();
@@ -108,8 +106,10 @@ function renderProfile() {
     document.getElementById("accessLevel").textContent = "Doctor-level clinical access";
   } else if (currentUser.role === "nurse") {
     document.getElementById("accessLevel").textContent = "Nurse-level care access";
-  } else {
+  } else if (currentUser.role === "patient") {
     document.getElementById("accessLevel").textContent = "Patient self-service access";
+  } else {
+    document.getElementById("accessLevel").textContent = "Limited access";
   }
 }
 
@@ -162,7 +162,7 @@ async function renderRecords() {
         class="${isAuthorized ? "" : "denied-button"}"
         onclick="handleRecordAccess('${record.id}')"
       >
-        ${isAuthorized ? "View Patient Chart" : "Request Access"}
+        ${isAuthorized ? "Open Patient Chart" : "Request Access"}
       </button>
     `;
 
@@ -175,12 +175,25 @@ async function renderRecords() {
 }
 
 function canAccessRecord(record) {
-  if (!currentUser) return false;
+  if (!currentUser) {
+    return false;
+  }
 
-  if (currentUser.role === "admin") return true;
-  if (currentUser.role === "patient") return record.patient === currentUser.fullName;
-  if (currentUser.role === "doctor") return true;
-  if (currentUser.role === "nurse") return record.requiredRole === "nurse";
+  if (currentUser.role === "doctor") {
+    return true;
+  }
+
+  if (currentUser.role === "nurse") {
+    return record.requiredRole === "nurse";
+  }
+
+  if (currentUser.role === "admin") {
+    return true;
+  }
+
+  if (currentUser.role === "patient") {
+    return record.patient === currentUser.fullName;
+  }
 
   return false;
 }
@@ -197,7 +210,11 @@ function handleRecordAccess(recordId) {
   if (!canAccessRecord(record)) {
     deniedAccessAttempts++;
 
-    addAuditLog(currentUser.username, `Requested/denied access to ${record.id}`, "Denied");
+    addAuditLog(
+      currentUser.username,
+      `Requested/denied access to ${record.id}`,
+      "Denied"
+    );
 
     showMessage(
       accessResult,
@@ -210,60 +227,97 @@ function handleRecordAccess(recordId) {
     return;
   }
 
-  addAuditLog(currentUser.username, `Accessed record ${record.id}`, "Granted");
+  addAuditLog(
+    currentUser.username,
+    `Accessed patient chart ${record.id}`,
+    "Granted"
+  );
 
   showMessage(
     accessResult,
-    `Access Granted: ${record.patient}'s ${record.type} record opened.`,
+    `Access Granted: ${record.patient}'s ${record.type} patient chart opened.`,
     "success"
   );
 
-  openRecordModal(record);
+  openPatientChart(record);
   renderAuditLog();
-  updateLastActivity(`Opened record ${record.id}`);
+  updateLastActivity(`Opened patient chart ${record.id}`);
 }
 
-function openRecordModal(record) {
+function openPatientChart(record) {
   selectedRecord = record;
 
-  document.getElementById("modalTitle").textContent = `${record.id}: ${record.patient}`;
-  document.getElementById("modalSubtitle").textContent =
-    `${record.type} | Classification: ${record.status}`;
+  document.getElementById("chartPatientName").textContent =
+    `${record.id}: ${record.patient}`;
 
-  document.getElementById("modalSummary").innerHTML = `
-    <strong>Patient:</strong> ${record.patient}<br>
-    <strong>Date of Birth:</strong> ${record.dob}<br>
-    <strong>Gender:</strong> ${record.gender}<br>
-    <strong>Diagnosis:</strong> ${record.diagnosis}<br>
-    <strong>Medication:</strong> ${record.medication}<br>
-    <strong>Allergies:</strong> ${record.allergies}<br>
-    <strong>Vitals:</strong> ${record.vitals}<br>
-    <strong>Doctor Assigned:</strong> ${record.doctorAssigned}<br>
-    <strong>Visit Date:</strong> ${record.visitDate}<br>
-    <strong>Lab Status:</strong> ${record.labStatus}<br><br>
-    ${record.summary}
-  `;
+  document.getElementById("chartSubtitle").textContent =
+    `${record.type} | Access Level: ${record.status} | Created: ${record.createdDate}`;
 
-  document.getElementById("modalNotes").innerHTML = `
-    ${record.notes}
-    ${renderRoleActions(record)}
-  `;
+  document.getElementById("chartDOB").textContent = record.dob;
+  document.getElementById("chartGender").textContent = record.gender;
+  document.getElementById("chartDiagnosis").textContent = record.diagnosis;
+  document.getElementById("chartMedication").textContent = record.medication;
+  document.getElementById("chartAllergies").textContent = record.allergies;
+  document.getElementById("chartVitals").textContent = record.vitals;
+  document.getElementById("chartDoctor").textContent = record.doctorAssigned;
+  document.getElementById("chartLabStatus").textContent = record.labStatus;
+  document.getElementById("chartNotes").textContent = record.notes;
 
-  document.getElementById("recordModal").classList.remove("hidden");
+  document.getElementById("chartPrescription").textContent =
+    `${record.medication} - active prescription`;
+
+  renderChartAppointments(record.patient);
+
+  document.getElementById("chartActions").innerHTML = renderRoleActions(record);
+
+  showPage("patientChartPage");
+}
+
+function renderChartAppointments(patientName) {
+  const appointmentList = document.getElementById("chartAppointments");
+
+  if (!appointmentList) return;
+
+  const appointments = getAppointments().filter(item => item.patient === patientName);
+
+  appointmentList.innerHTML = "";
+
+  if (appointments.length === 0) {
+    appointmentList.innerHTML = "<li>No appointments scheduled yet.</li>";
+    return;
+  }
+
+  appointments.forEach(appointment => {
+    const li = document.createElement("li");
+
+    li.textContent =
+      `${appointment.date} | ${appointment.time} | ${appointment.reason} | ${appointment.status}`;
+
+    appointmentList.appendChild(li);
+  });
 }
 
 function renderRoleActions(record) {
-  if (!currentUser) return "";
+  if (!currentUser) {
+    return "";
+  }
 
   if (currentUser.role === "doctor") {
     return `
       <div class="action-box">
         <h3>Doctor Actions</h3>
+        <p class="muted">Doctors can add provider notes, create prescriptions, upload records, and review labs.</p>
+
+        <label>Provider Note</label>
         <textarea id="providerNoteInput" placeholder="Add provider note..."></textarea>
         <button onclick="submitProviderNote()">Add Provider Note</button>
 
+        <label>Medication</label>
         <input type="text" id="prescriptionMedication" placeholder="Medication name" />
+
+        <label>Dosage Instructions</label>
         <input type="text" id="prescriptionDosage" placeholder="Dosage instructions" />
+
         <button onclick="submitPrescription()">Create Prescription</button>
       </div>
     `;
@@ -273,23 +327,51 @@ function renderRoleActions(record) {
     return `
       <div class="action-box">
         <h3>Nurse Actions</h3>
+        <p class="muted">Nurses can update vitals and upload routine medical records, but cannot prescribe medication or open confidential doctor-only records.</p>
+
+        <label>Updated Vitals</label>
         <input type="text" id="vitalsInput" placeholder="Example: BP 120/80, HR 74, Temp 98.6°F" />
+
         <button onclick="submitVitals()">Update Vitals</button>
       </div>
     `;
   }
 
   if (currentUser.role === "admin") {
-    return `
-      <div class="action-box">
-        <h3>Front Desk Actions</h3>
-        <p class="muted">Admin can schedule appointments and view result status, but clinical notes remain restricted.</p>
-        <input type="date" id="appointmentDate" />
-        <input type="text" id="appointmentTime" placeholder="10:30 AM" />
-        <input type="text" id="appointmentReason" placeholder="Reason for visit" />
-        <button onclick="submitAppointment()">Schedule Appointment</button>
-      </div>
-    `;
+  return `
+    <div class="action-box">
+      <h3>Front Desk Actions</h3>
+      <p class="muted">
+        Admin/front desk can schedule appointments and check result status, but cannot
+        view or edit clinical notes, diagnoses, or prescriptions.
+      </p>
+
+      <label>Appointment Date</label>
+      <input type="date" id="appointmentDate" />
+
+      <label>Appointment Time Window</label>
+      <select id="appointmentTime">
+        <option value="">Select a time window</option>
+        <option value="8:00 AM - 9:00 AM">8:00 AM - 9:00 AM</option>
+        <option value="9:00 AM - 10:00 AM">9:00 AM - 10:00 AM</option>
+        <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
+        <option value="1:00 PM - 2:00 PM">1:00 PM - 2:00 PM</option>
+        <option value="2:00 PM - 3:00 PM">2:00 PM - 3:00 PM</option>
+      </select>
+
+      <label>Provider</label>
+      <select id="appointmentDoctor">
+        <option value="Dr. Sarah Ahmed">Dr. Sarah Ahmed</option>
+        <option value="Dr. James Carter">Dr. James Carter</option>
+        <option value="Dr. Lina Patel">Dr. Lina Patel</option>
+      </select>
+
+      <label>Reason for Visit</label>
+      <input type="text" id="appointmentReason" placeholder="Annual check-up, follow-up, lab review..." />
+
+      <button onclick="submitAppointment()">Schedule Appointment</button>
+    </div>
+  `;
   }
 
   if (currentUser.role === "patient") {
@@ -297,6 +379,7 @@ function renderRoleActions(record) {
       <div class="action-box">
         <h3>Patient Portal</h3>
         <p class="muted">Patients can view their own records, prescriptions, lab result status, and visit history.</p>
+        <button onclick="downloadPatientSummary()">Download Record Summary</button>
       </div>
     `;
   }
@@ -313,12 +396,15 @@ function submitProviderNote() {
   }
 
   addProviderNote(selectedRecord.id, noteText, currentUser.username);
+
+  selectedRecord.notes = `${selectedRecord.notes} New provider note: ${noteText}`;
+  document.getElementById("chartNotes").textContent = selectedRecord.notes;
+
   alert("Provider note added successfully.");
 
   renderAuditLog();
   renderRecords();
   updateLastActivity(`Added provider note to ${selectedRecord.id}`);
-  closeRecordModal();
 }
 
 function submitPrescription() {
@@ -331,11 +417,14 @@ function submitPrescription() {
   }
 
   addPrescription(selectedRecord.patient, medication, dosage, currentUser.username);
+
+  document.getElementById("chartPrescription").textContent =
+    `${medication} - ${dosage}`;
+
   alert("Prescription created successfully.");
 
   renderAuditLog();
   updateLastActivity(`Created prescription for ${selectedRecord.patient}`);
-  closeRecordModal();
 }
 
 function submitVitals() {
@@ -347,17 +436,21 @@ function submitVitals() {
   }
 
   addVitals(selectedRecord.patient, vitals, currentUser.username);
+
+  selectedRecord.vitals = vitals;
+  document.getElementById("chartVitals").textContent = vitals;
+
   alert("Vitals updated successfully.");
 
   renderAuditLog();
   renderRecords();
   updateLastActivity(`Updated vitals for ${selectedRecord.patient}`);
-  closeRecordModal();
 }
 
 function submitAppointment() {
   const date = document.getElementById("appointmentDate").value;
-  const time = document.getElementById("appointmentTime").value.trim();
+  const time = document.getElementById("appointmentTime").value;
+  const doctor = document.getElementById("appointmentDoctor").value;
   const reason = document.getElementById("appointmentReason").value.trim();
 
   if (date === "" || time === "" || reason === "") {
@@ -365,16 +458,19 @@ function submitAppointment() {
     return;
   }
 
-  addAppointment(selectedRecord.patient, date, time, reason, currentUser.username);
+  const fullReason = `${reason} with ${doctor}`;
+
+  addAppointment(selectedRecord.patient, date, time, fullReason, currentUser.username);
+
   alert("Appointment scheduled successfully.");
 
+  renderChartAppointments(selectedRecord.patient);
   renderAuditLog();
   updateLastActivity(`Scheduled appointment for ${selectedRecord.patient}`);
-  closeRecordModal();
 }
 
-function closeRecordModal() {
-  document.getElementById("recordModal").classList.add("hidden");
+function downloadPatientSummary() {
+  alert("Patient record summary downloaded successfully.\n\n(patient_summary_mock.pdf)");
 }
 
 async function handleUpload() {
@@ -384,13 +480,31 @@ async function handleUpload() {
   const fileSize = document.getElementById("fileSize").value.trim();
   const uploadResult = document.getElementById("uploadResult");
 
-  if (fileName === "" || patientName === "" || recordType === "" || fileSize === "") {
-    showMessage(uploadResult, "Upload rejected: all fields are required.", "denied");
+  if (
+    fileName === "" ||
+    patientName === "" ||
+    recordType === "" ||
+    fileSize === ""
+  ) {
+    showMessage(
+      uploadResult,
+      "Upload rejected: all fields are required.",
+      "denied"
+    );
+
     return;
   }
 
-  if (!fileName.endsWith(".pdf") && !fileName.endsWith(".txt")) {
-    showMessage(uploadResult, "Upload rejected: only .pdf and .txt files are allowed.", "denied");
+  if (
+    !fileName.endsWith(".pdf") &&
+    !fileName.endsWith(".txt")
+  ) {
+    showMessage(
+      uploadResult,
+      "Upload rejected: only .pdf and .txt files are allowed.",
+      "denied"
+    );
+
     return;
   }
 
@@ -403,7 +517,12 @@ async function handleUpload() {
   );
 
   if (!uploadResponse.ok) {
-    showMessage(uploadResult, `Upload failed: ${uploadResponse.data.message}`, "denied");
+    showMessage(
+      uploadResult,
+      `Upload failed: ${uploadResponse.data.message}`,
+      "denied"
+    );
+
     return;
   }
 
@@ -431,7 +550,10 @@ function renderAuditLog() {
 
   getAuditLogs().forEach(log => {
     const li = document.createElement("li");
-    li.textContent = `[${log.time}] ${log.user} - ${log.action} (${log.status})`;
+
+    li.textContent =
+      `[${log.time}] ${log.user} - ${log.action} (${log.status})`;
+
     auditLog.appendChild(li);
   });
 }
@@ -455,7 +577,9 @@ function showNotifications() {
 }
 
 function downloadAuditReport() {
-  alert("Audit report downloaded successfully.\n\n(report_download_mock.pdf)");
+  alert(
+    "Audit report downloaded successfully.\n\n(report_download_mock.pdf)"
+  );
 }
 
 function updateLastActivity(activity) {
@@ -464,6 +588,7 @@ function updateLastActivity(activity) {
 
 function startSessionTimer() {
   clearInterval(sessionInterval);
+
   sessionSeconds = 900;
 
   sessionInterval = setInterval(() => {
@@ -524,34 +649,82 @@ function showForgotPasswordMessage() {
 async function analyzeAuditLogs() {
   const summaryBox = document.getElementById("llmSummary");
 
-  const summary = `
-Risk Level: ${siemAlerts > 0 || deniedAccessAttempts > 0 ? "Medium" : "Low"}
+  const riskLevel =
+    failedLoginAttempts >= 5 || siemAlerts >= 3 || deniedAccessAttempts > 0
+      ? "High"
+      : failedLoginAttempts >= 2 || siemAlerts > 0
+      ? "Medium"
+      : "Low";
 
-Security Summary:
+  const riskMessage =
+    riskLevel === "High"
+      ? "Repeated failed login activity was detected. This may indicate password guessing or unauthorized access attempts."
+      : riskLevel === "Medium"
+      ? "Some suspicious activity was detected and should be reviewed by an administrator."
+      : "No major suspicious activity was detected in the current session.";
 
-Failed Login Attempts: ${failedLoginAttempts}
-Denied Access Attempts: ${deniedAccessAttempts}
-Uploaded Medical Records: ${uploadedFiles}
-SIEM Alerts Triggered: ${siemAlerts}
+  summaryBox.innerHTML = `
+    <div class="security-report">
+      <div class="security-report-header">
+        <div>
+          <h2>Security Assistant Report</h2>
+          <p>AI-assisted review of recent audit activity.</p>
+        </div>
+        <span class="risk-badge ${riskLevel.toLowerCase()}">${riskLevel} Risk</span>
+      </div>
 
-Findings:
+      <div class="security-summary-grid">
+        <div class="security-card">
+          <span>Failed Logins</span>
+          <strong>${failedLoginAttempts}</strong>
+        </div>
 
-✓ MFA is enabled for user login.
-✓ RBAC is active for medical record access.
-✓ Audit logging is recording login, upload, and access events.
-✓ Upload validation limits files to approved medical document types.
-${deniedAccessAttempts > 0 ? "⚠ Denied access attempts were detected and should be reviewed." : "✓ No denied access attempts detected in this session."}
+        <div class="security-card">
+          <span>Denied Access</span>
+          <strong>${deniedAccessAttempts}</strong>
+        </div>
 
-Recommendations:
+        <div class="security-card">
+          <span>Medical Uploads</span>
+          <strong>${uploadedFiles}</strong>
+        </div>
 
-• Continue enforcing MFA for all users.
-• Review repeated failed login attempts.
-• Investigate abnormal access requests.
-• Continue monitoring upload activity.
-• Keep backend RBAC as the final authorization source.
-`;
+        <div class="security-card">
+          <span>SIEM Alerts</span>
+          <strong>${siemAlerts}</strong>
+        </div>
+      </div>
 
-  showMessage(summaryBox, summary, "warning");
+      <div class="security-section">
+        <h3>Incident Summary</h3>
+        <p>${riskMessage}</p>
+        <p>The audit log shows login attempts, authenticated sessions, patient chart views, and Security Assistant review requests. These events help administrators verify accountability and investigate suspicious access patterns.</p>
+      </div>
+
+      <div class="security-section">
+        <h3>Suspicious Activity Review</h3>
+        <p>${failedLoginAttempts > 0 ? "⚠ Multiple failed login attempts were recorded." : "✓ No failed login attempts were recorded."}</p>
+        <p>${deniedAccessAttempts > 0 ? "⚠ At least one user attempted to access a record outside their allowed role." : "✓ No denied record access attempts were recorded."}</p>
+        <p>${uploadedFiles > 0 ? "✓ Medical record uploads were recorded and should be reviewed for approved file types." : "✓ No medical record uploads occurred during this session."}</p>
+      </div>
+
+      <div class="security-section">
+        <h3>Recommended Admin Actions</h3>
+        <p>• Review usernames connected to repeated failed login attempts.</p>
+        <p>• Confirm that MFA remains enabled for all users.</p>
+        <p>• Review denied access events for possible privilege misuse.</p>
+        <p>• Continue monitoring uploads for unsafe file types.</p>
+        <p>• Keep backend RBAC as the final source of authorization.</p>
+      </div>
+
+      <div class="security-note">
+        Important: The LLM Security Assistant only summarizes audit activity. It does not approve access, deny access, edit records, or replace backend RBAC.
+      </div>
+    </div>
+  `;
+
+  summaryBox.className = "result warning";
+  summaryBox.classList.remove("hidden");
 
   if (currentUser) {
     addAuditLog(currentUser.username, "Requested AI security audit review", "Success");
@@ -564,4 +737,28 @@ function showMessage(element, message, className) {
   element.textContent = message;
   element.className = `result ${className}`;
   element.classList.remove("hidden");
+}
+
+function configureRoleNavigation() {
+  const uploadButton = document.getElementById("uploadNavButton");
+  const auditButton = document.getElementById("auditNavButton");
+  const securityButton = document.getElementById("securityNavButton");
+  const adminButton = document.getElementById("adminStatsButton");
+
+  uploadButton.classList.add("hidden");
+  auditButton.classList.add("hidden");
+  securityButton.classList.add("hidden");
+  adminButton.classList.add("hidden");
+
+  if (currentUser.role === "doctor" || currentUser.role === "nurse") {
+    uploadButton.classList.remove("hidden");
+    auditButton.classList.remove("hidden");
+    securityButton.classList.remove("hidden");
+  }
+
+  if (currentUser.role === "admin") {
+    auditButton.classList.remove("hidden");
+    securityButton.classList.remove("hidden");
+    adminButton.classList.remove("hidden");
+  }
 }

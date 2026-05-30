@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Secure Medical Record Sharing System</title>
+  <title>Secure Medical Record Management System</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -17,9 +17,9 @@
       <div id="navMenu" class="nav hidden">
         <button onclick="showPage('dashboardPage')">Dashboard</button>
         <button onclick="showPage('recordsPage')">Medical Records</button>
-        <button onclick="showPage('uploadPage')">Upload Record</button>
-        <button onclick="showPage('auditPage')">Audit Log</button>
-        <button onclick="showPage('securityAssistantPage')">Security Assistant</button>
+        <button id="uploadNavButton" onclick="showPage('uploadPage')">Upload Record</button>
+        <button id="auditNavButton" onclick="showPage('auditPage')">Audit Log</button>
+        <button id="securityNavButton" onclick="showPage('securityAssistantPage')">Security Assistant</button>
         <button id="adminStatsButton" class="hidden" onclick="showPage('adminStatsPage')">Admin Statistics</button>
         <button class="logout" onclick="logout()">Logout</button>
       </div>
@@ -59,7 +59,7 @@
           <div id="loginResult" class="result hidden"></div>
 
           <p class="muted test-line">
-            Test Users: doctor1 / Doctor123!, nurse1 / Nurse123!, admin1 / Admin123!
+            Test Users: doctor1 / Doctor123!, nurse1 / Nurse123!, admin1 / Admin123!, patient1 / Patient123!
           </p>
         </div>
 
@@ -150,6 +150,78 @@
           </div>
         </section>
 
+        <section id="patientChartPage" class="page hidden">
+          <div class="card">
+            <button onclick="showPage('recordsPage')">← Back to Medical Records</button>
+
+            <div class="record-header" style="margin-top: 20px;">
+              <div>
+                <h2 id="chartPatientName">Patient Chart</h2>
+                <p class="muted" id="chartSubtitle">Complete patient medical overview</p>
+              </div>
+              <span class="sensitive">Protected Health Information</span>
+            </div>
+
+            <div class="profile-details" style="margin-top: 20px;">
+              <div><span>DOB</span><strong id="chartDOB"></strong></div>
+              <div><span>Gender</span><strong id="chartGender"></strong></div>
+              <div><span>Diagnosis</span><strong id="chartDiagnosis"></strong></div>
+              <div><span>Medication</span><strong id="chartMedication"></strong></div>
+              <div><span>Allergies</span><strong id="chartAllergies"></strong></div>
+              <div><span>Vitals</span><strong id="chartVitals"></strong></div>
+              <div><span>Doctor Assigned</span><strong id="chartDoctor"></strong></div>
+              <div><span>Lab Status</span><strong id="chartLabStatus"></strong></div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h2>Visit History</h2>
+              <ul class="audit">
+                <li>2026-05-12 - Routine lab review and blood pressure follow-up</li>
+                <li>2026-03-08 - Annual wellness visit</li>
+                <li>2025-12-19 - Urgent care visit for fever and cough</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h2>Appointments</h2>
+              <p class="footer-note">Reminder: This patient may be due for an annual check-up.</p>
+              <ul id="chartAppointments" class="audit"></ul>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h2>Prescriptions</h2>
+              <ul class="audit">
+                <li id="chartPrescription">Current prescription will appear here</li>
+                <li>Pharmacy refill status: Active</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h2>Preventive Care Reminder</h2>
+              <p>Has this patient scheduled their annual wellness check-up?</p>
+              <p class="footer-note">
+                If not, front desk should help schedule a visit with the assigned provider.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h2>Provider Notes</h2>
+              <p id="chartNotes"></p>
+            </div>
+
+            <div class="card">
+              <h2>Role Actions</h2>
+              <div id="chartActions"></div>
+            </div>
+          </div>
+        </section>
+
         <section id="uploadPage" class="page hidden">
           <div class="card">
             <h2>Upload Medical Record</h2>
@@ -217,7 +289,7 @@
             <p class="muted">Admin-only security and system activity overview.</p>
 
             <div class="profile-details">
-              <div><span>Total Users</span><strong>3</strong></div>
+              <div><span>Total Users</span><strong>4</strong></div>
               <div><span>Total Medical Records</span><strong>4</strong></div>
               <div><span>Failed Login Attempts</span><strong id="failedLoginCount">0</strong></div>
               <div><span>Denied Access Attempts</span><strong id="deniedAccessCount">0</strong></div>
@@ -225,29 +297,32 @@
               <div><span>SIEM Alerts</span><strong id="siemAlertCount">0</strong></div>
             </div>
           </div>
+
+          <div class="grid">
+            <div class="card">
+              <h2>Security Controls</h2>
+              <div class="control"><span>MFA</span><strong>Enabled</strong></div>
+              <div class="control"><span>RBAC</span><strong>Active</strong></div>
+              <div class="control"><span>Audit Logging</span><strong>Active</strong></div>
+              <div class="control"><span>Upload Validation</span><strong>Enabled</strong></div>
+            </div>
+
+            <div class="card">
+              <h2>Admin Scope</h2>
+              <p>
+                Admin/front desk users can schedule appointments, verify demographics,
+                and check result status. They cannot edit diagnoses, prescriptions,
+                provider notes, or confidential clinical findings.
+              </p>
+              <p class="footer-note">
+                This supports least privilege by keeping administrative work separate from clinical decisions.
+              </p>
+            </div>
+          </div>
         </section>
 
       </section>
     </main>
-  </div>
-
-  <div id="recordModal" class="modal hidden">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeRecordModal()">×</button>
-      <h2 id="modalTitle">Medical Record</h2>
-      <p class="muted" id="modalSubtitle"></p>
-
-      <div class="fake-report">
-        <h3>Clinical Summary</h3>
-        <p id="modalSummary"></p>
-
-        <h3>Provider Notes</h3>
-        <p id="modalNotes"></p>
-
-        <h3>Security Notice</h3>
-        <p>This record is protected by role-based access control and every access attempt is logged.</p>
-      </div>
-    </div>
   </div>
 
   <div id="mfaModal" class="modal hidden">
