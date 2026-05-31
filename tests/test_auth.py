@@ -7,7 +7,7 @@ def test_successful_login():
         "/api/login",
         json={
             "username": "doctor1",
-            "password": "doctor123"
+            "password": "Doctor123!"
         }
     )
 

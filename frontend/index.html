@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Secure Medical Record Management System</title>
+  <title>WWU Medical Center</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
   <div class="app">
     <aside class="sidebar">
-      <h2>MedSecure</h2>
-      <p>Final Release</p>
-      <div class="badge">RBAC + Validation + Audit Logging + AI Security Review</div>
+      <h2>WWU Health</h2>
+      <p>Patient Portal</p>
+      <div class="badge">Secure Access</div>
 
       <div id="navMenu" class="nav hidden">
         <button onclick="showPage('dashboardPage')">Dashboard</button>
-        <button onclick="showPage('recordsPage')">Medical Records</button>
-        <button id="uploadNavButton" onclick="showPage('uploadPage')">Upload Record</button>
+        <button onclick="showPage('recordsPage')">Patient Records</button>
+        <button id="uploadNavButton" onclick="showPage('uploadPage')">New Record</button>
         <button id="auditNavButton" onclick="showPage('auditPage')">Audit Log</button>
-        <button id="securityNavButton" onclick="showPage('securityAssistantPage')">Security Assistant</button>
+        <button id="securityNavButton" onclick="showPage('securityAssistantPage')">Security Review</button>
         <button id="adminStatsButton" class="hidden" onclick="showPage('adminStatsPage')">Admin Statistics</button>
         <button class="logout" onclick="logout()">Logout</button>
       </div>
@@ -28,26 +28,26 @@
     <main class="main">
       <header>
         <div>
-          <h1>Secure Medical Record Management System</h1>
-          <p>Role-based access control for sensitive patient medical records.</p>
+          <h1>Western Washington University Medical Center</h1>
+          <p>Secure access to patient records, appointments, prescriptions, and care team updates.</p>
         </div>
 
         <div class="header-actions">
           <button id="notificationBell" class="notification hidden" onclick="showNotifications()">🔔</button>
-          <div id="currentUser" class="current-user">No user logged in</div>
+          <div id="currentUser" class="current-user hidden">No user logged in</div>
         </div>
       </header>
 
       <section id="loginPage" class="grid">
         <div class="card">
           <h2>Secure Login</h2>
-          <p class="muted">Use a test account to access the final release system.</p>
+          <p class="muted">Sign in to continue to your secure portal.</p>
 
           <label>Username</label>
-          <input type="text" id="username" placeholder="doctor1" />
+          <input type="text" id="username" placeholder="Username" />
 
           <label>Password</label>
-          <input type="password" id="password" placeholder="Doctor123!" />
+          <input type="password" id="password" placeholder="Password" />
 
           <div class="user-buttons">
             <button onclick="handleLogin()" class="doctor">Sign In</button>
@@ -57,19 +57,27 @@
           <button onclick="showForgotPasswordMessage()" class="linkButton">Forgot password?</button>
 
           <div id="loginResult" class="result hidden"></div>
-
-          <p class="muted test-line">
-            Test Users: doctor1 / Doctor123!, nurse1 / Nurse123!, admin1 / Admin123!, patient1 / Patient123!
-          </p>
         </div>
 
-        <div class="card">
-          <h2>Security Controls</h2>
-          <div class="control"><span>Authentication</span><strong>Enabled</strong></div>
-          <div class="control"><span>Frontend RBAC</span><strong>Enabled</strong></div>
-          <div class="control"><span>Input Validation</span><strong>Enabled</strong></div>
-          <div class="control"><span>Audit Logging</span><strong>Enabled</strong></div>
-          <div class="control"><span>AI Security Review</span><strong>Enabled</strong></div>
+        <div class="card login-image-card">
+          <img
+            src="https://d13b2ieg84qqce.cloudfront.net/8b927b2c0732063cddac5718142cd63b47dd8749"
+            alt="WWU Medical Center building"
+            class="login-building-image"
+          />
+
+          <h2>Bellingham Campus Care</h2>
+          <p class="muted">Serving the Western Washington University community in Bellingham.</p>
+
+          <div class="control">
+            <span>Address</span>
+            <strong>516 High Street, Bellingham, WA 98225</strong>
+          </div>
+
+          <div class="control">
+            <span>Hours</span>
+            <strong>Monday to Friday, 8:00 AM to 5:00 PM</strong>
+          </div>
         </div>
       </section>
 
@@ -96,34 +104,12 @@
               </div>
             </div>
 
-            <div class="card">
-              <h2>Access Summary</h2>
-              <div class="control"><span>Total Medical Records</span><strong id="totalRecords">0</strong></div>
-              <div class="control"><span>Access Level</span><strong id="accessLevel">None</strong></div>
-              <div class="control"><span>Session Status</span><strong id="sessionTimer">15:00 remaining</strong></div>
-              <div class="control"><span>Last Activity</span><strong id="lastActivity">No activity yet</strong></div>
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="card">
-              <h2>Security Status</h2>
-              <div class="control"><span>Encryption at Rest</span><strong>AES-256 Enabled</strong></div>
-              <div class="control"><span>Transport Security</span><strong>TLS 1.3 Active</strong></div>
-              <div class="control"><span>Audit Monitoring</span><strong>Enabled</strong></div>
-              <div class="control"><span>SIEM Status</span><strong id="siemStatus">No active alerts</strong></div>
-            </div>
-
-            <div class="card">
-              <h2>Portal Overview</h2>
-              <p>
-                This final release focuses on secure medical record management, including
-                authenticated access, role-based medical record visibility, protected upload validation,
-                persistent audit logging, and AI-assisted security review for administrators.
-              </p>
-              <p class="footer-note">
-                Records retention policy: Patient medical records are retained according to Washington State healthcare data retention guidelines and HIPAA compliance requirements.
-              </p>
+            <div class="card" id="dashboardSummaryCard">
+              <h2 id="dashboardSummaryTitle">Patient Summary</h2>
+              <div class="control"><span id="summaryLabel1">Primary Care Provider</span><strong id="summaryValue1">Dr. Sarah Ahmed</strong></div>
+              <div class="control"><span id="summaryLabel2">Next Appointment</span><strong id="summaryValue2">June 2, 2026 at 10:30 AM</strong></div>
+              <div class="control"><span id="summaryLabel3">Lab Results</span><strong id="summaryValue3">Results Available</strong></div>
+              <div class="control"><span id="summaryLabel4">Account Status</span><strong id="summaryValue4">Active</strong></div>
             </div>
           </div>
         </section>
@@ -132,7 +118,7 @@
           <div class="card record-card">
             <div class="record-header">
               <div>
-                <h2>Medical Records</h2>
+                <h2>Patient Records</h2>
                 <p class="muted">Only authorized roles can view protected patient record details.</p>
               </div>
               <span class="sensitive">Sensitive Health Data</span>
@@ -152,7 +138,7 @@
 
         <section id="patientChartPage" class="page hidden">
           <div class="card">
-            <button onclick="showPage('recordsPage')">← Back to Medical Records</button>
+            <button onclick="showPage('recordsPage')">← Back to Patient Records</button>
 
             <div class="record-header" style="margin-top: 20px;">
               <div>
@@ -169,63 +155,18 @@
               <div><span>Medication</span><strong id="chartMedication"></strong></div>
               <div><span>Allergies</span><strong id="chartAllergies"></strong></div>
               <div><span>Vitals</span><strong id="chartVitals"></strong></div>
-              <div><span>Doctor Assigned</span><strong id="chartDoctor"></strong></div>
+              <div><span>Primary Care Provider</span><strong id="chartDoctor"></strong></div>
               <div><span>Lab Status</span><strong id="chartLabStatus"></strong></div>
             </div>
           </div>
 
-          <div class="grid">
-            <div class="card">
-              <h2>Visit History</h2>
-              <ul class="audit">
-                <li>2026-05-12 - Routine lab review and blood pressure follow-up</li>
-                <li>2026-03-08 - Annual wellness visit</li>
-                <li>2025-12-19 - Urgent care visit for fever and cough</li>
-              </ul>
-            </div>
-
-            <div class="card">
-              <h2>Appointments</h2>
-              <p class="footer-note">Reminder: This patient may be due for an annual check-up.</p>
-              <ul id="chartAppointments" class="audit"></ul>
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="card">
-              <h2>Prescriptions</h2>
-              <ul class="audit">
-                <li id="chartPrescription">Current prescription will appear here</li>
-                <li>Pharmacy refill status: Active</li>
-              </ul>
-            </div>
-
-            <div class="card">
-              <h2>Preventive Care Reminder</h2>
-              <p>Has this patient scheduled their annual wellness check-up?</p>
-              <p class="footer-note">
-                If not, front desk should help schedule a visit with the assigned provider.
-              </p>
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="card">
-              <h2>Provider Notes</h2>
-              <p id="chartNotes"></p>
-            </div>
-
-            <div class="card">
-              <h2>Role Actions</h2>
-              <div id="chartActions"></div>
-            </div>
-          </div>
+          <div id="chartSections"></div>
         </section>
 
         <section id="uploadPage" class="page hidden">
           <div class="card">
-            <h2>Upload Medical Record</h2>
-            <p class="muted">Only .pdf and .txt medical record documents are accepted in this release.</p>
+            <h2>New Medical Record</h2>
+            <p class="muted">Only .pdf and .txt medical record documents are accepted.</p>
 
             <label>Medical Record File Name</label>
             <input type="text" id="fileName" placeholder="patient-lab-results.pdf" />
@@ -239,7 +180,7 @@
             <label>Record File Size</label>
             <input type="text" id="fileSize" placeholder="2.4 MB" />
 
-            <button onclick="handleUpload()">Upload Medical Record</button>
+            <button onclick="handleUpload()">Save Medical Record</button>
 
             <div id="uploadResult" class="result hidden"></div>
           </div>
@@ -250,9 +191,9 @@
             <div class="record-header">
               <div>
                 <h2>Audit Log</h2>
-                <p class="muted">System events are logged for accountability, monitoring, and threat detection.</p>
+                <p class="muted">System events are logged for accountability and monitoring.</p>
               </div>
-              <button onclick="downloadAuditReport()">Download Audit Report</button>
+              <button onclick="downloadAuditReport()">Export Audit Log</button>
             </div>
             <ul id="auditLog" class="audit"></ul>
           </div>
@@ -262,20 +203,13 @@
           <div class="card">
             <div class="record-header">
               <div>
-                <h2>LLM Security Assistant</h2>
+                <h2>Security Monitoring Dashboard</h2>
                 <p class="muted">
-                  AI-assisted audit log analysis for suspicious activity, failed logins,
-                  denied access attempts, and administrator security summaries.
+                  Review recent login activity, denied access attempts, medical record uploads, and audit events.
                 </p>
               </div>
               <span class="sensitive">Admin Review</span>
             </div>
-
-            <p>
-              The Security Assistant reviews recent audit activity and generates a short
-              administrator-facing summary. It does not make access decisions. Backend RBAC
-              remains responsible for authentication and authorization enforcement.
-            </p>
 
             <button onclick="analyzeAuditLogs()">Analyze Audit Logs</button>
 
@@ -285,38 +219,16 @@
 
         <section id="adminStatsPage" class="page hidden">
           <div class="card">
-            <h2>Admin Statistics</h2>
-            <p class="muted">Admin-only security and system activity overview.</p>
+            <h2>Front Desk Overview</h2>
+            <p class="muted">Administrative view for appointments, result status, and monitored access activity.</p>
 
             <div class="profile-details">
-              <div><span>Total Users</span><strong>4</strong></div>
-              <div><span>Total Medical Records</span><strong>4</strong></div>
+              <div><span>Total Patients</span><strong>4</strong></div>
+              <div><span>Appointments Scheduled</span><strong>2</strong></div>
+              <div><span>Results Available</span><strong>2</strong></div>
+              <div><span>Pending Result Reviews</span><strong>1</strong></div>
               <div><span>Failed Login Attempts</span><strong id="failedLoginCount">0</strong></div>
               <div><span>Denied Access Attempts</span><strong id="deniedAccessCount">0</strong></div>
-              <div><span>Uploaded Medical Records</span><strong id="uploadedFileCount">0</strong></div>
-              <div><span>SIEM Alerts</span><strong id="siemAlertCount">0</strong></div>
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="card">
-              <h2>Security Controls</h2>
-              <div class="control"><span>MFA</span><strong>Enabled</strong></div>
-              <div class="control"><span>RBAC</span><strong>Active</strong></div>
-              <div class="control"><span>Audit Logging</span><strong>Active</strong></div>
-              <div class="control"><span>Upload Validation</span><strong>Enabled</strong></div>
-            </div>
-
-            <div class="card">
-              <h2>Admin Scope</h2>
-              <p>
-                Admin/front desk users can schedule appointments, verify demographics,
-                and check result status. They cannot edit diagnoses, prescriptions,
-                provider notes, or confidential clinical findings.
-              </p>
-              <p class="footer-note">
-                This supports least privilege by keeping administrative work separate from clinical decisions.
-              </p>
             </div>
           </div>
         </section>

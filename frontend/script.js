@@ -60,19 +60,28 @@ async function verifyMFA() {
   document.getElementById("loginPage").classList.add("hidden");
   document.getElementById("protectedContent").classList.remove("hidden");
   document.getElementById("navMenu").classList.remove("hidden");
+  
+  if (currentUser.role === "patient") {
+  document.getElementById("notificationBell").classList.add("hidden");
+  } else {
   document.getElementById("notificationBell").classList.remove("hidden");
+  }
+
+  document.getElementById("currentUser").classList.remove("hidden");
 
   document.getElementById("currentUser").textContent =
-    `Logged in as ${currentUser.username} (${currentUser.role})`;
+  currentUser.role === "patient"
+    ? `Welcome, ${currentUser.fullName}`
+    : `${currentUser.fullName} (${currentUser.role})`;
 
   addAuditLog(currentUser.username, `${currentUser.role} logged in with MFA`, "Success");
 
+  configureRoleNavigation();
   renderProfile();
+  renderDashboardSummary();
   await renderRecords();
   renderAuditLog();
   updateAdminStats();
-
-  configureRoleNavigation();
 
   showPage("dashboardPage");
   startSessionTimer();
@@ -85,13 +94,31 @@ function cancelMFA() {
 function renderProfile() {
   document.getElementById("profileName").textContent = currentUser.fullName;
   document.getElementById("profileRole").textContent = currentUser.role.toUpperCase();
-  document.getElementById("employeeId").textContent = currentUser.employeeId;
-  document.getElementById("department").textContent = currentUser.department;
-  document.getElementById("credentials").textContent = currentUser.credentials;
-  document.getElementById("years").textContent = currentUser.years;
+
+  if (currentUser.role === "patient") {
+    document.getElementById("employeeId").parentElement.querySelector("span").textContent = "Patient ID";
+    document.getElementById("department").parentElement.querySelector("span").textContent = "Clinic";
+    document.getElementById("credentials").parentElement.querySelector("span").textContent = "Date of Birth";
+    document.getElementById("years").parentElement.querySelector("span").textContent = "Account Status";
+
+    document.getElementById("employeeId").textContent = currentUser.employeeId;
+    document.getElementById("department").textContent = "WWU Family Medicine";
+    document.getElementById("credentials").textContent = "1996-02-14";
+    document.getElementById("years").textContent = "Active";
+  } else {
+    document.getElementById("employeeId").parentElement.querySelector("span").textContent = "Employee ID";
+    document.getElementById("department").parentElement.querySelector("span").textContent = "Department";
+    document.getElementById("credentials").parentElement.querySelector("span").textContent = "Credentials";
+    document.getElementById("years").parentElement.querySelector("span").textContent = "Years at Hospital";
+
+    document.getElementById("employeeId").textContent = currentUser.employeeId;
+    document.getElementById("department").textContent = currentUser.department;
+    document.getElementById("credentials").textContent = currentUser.credentials;
+    document.getElementById("years").textContent = currentUser.years;
+  }
+
   document.getElementById("lastLogin").textContent = currentUser.lastLogin;
   document.getElementById("mfaStatus").textContent = currentUser.mfaStatus;
-  document.getElementById("totalRecords").textContent = getMedicalRecords().length;
 
   document.getElementById("profileInitials").textContent =
     currentUser.fullName
@@ -99,18 +126,42 @@ function renderProfile() {
       .map(word => word[0])
       .join("")
       .slice(0, 2);
+}
 
-  if (currentUser.role === "admin") {
-    document.getElementById("accessLevel").textContent = "Front desk limited access";
-  } else if (currentUser.role === "doctor") {
-    document.getElementById("accessLevel").textContent = "Doctor-level clinical access";
-  } else if (currentUser.role === "nurse") {
-    document.getElementById("accessLevel").textContent = "Nurse-level care access";
-  } else if (currentUser.role === "patient") {
-    document.getElementById("accessLevel").textContent = "Patient self-service access";
-  } else {
-    document.getElementById("accessLevel").textContent = "Limited access";
+function renderDashboardSummary() {
+  const title = document.getElementById("dashboardSummaryTitle");
+
+  if (currentUser.role === "patient") {
+    title.textContent = "Patient Summary";
+
+    document.getElementById("summaryLabel1").textContent = "Next Appointment";
+    document.getElementById("summaryValue1").textContent = "June 2, 2026 at 10:30 AM";
+
+    document.getElementById("summaryLabel2").textContent = "Lab Results";
+    document.getElementById("summaryValue2").textContent = "Results Available";
+
+    document.getElementById("summaryLabel3").textContent = "Prescription Status";
+    document.getElementById("summaryValue3").textContent = "Refill Active";
+
+    document.getElementById("summaryLabel4").textContent = "Account Status";
+    document.getElementById("summaryValue4").textContent = "Active";
+
+    return;
   }
+
+  title.textContent = "Work Summary";
+
+  document.getElementById("summaryLabel1").textContent = "Patient Records";
+  document.getElementById("summaryValue1").textContent = getMedicalRecords().length;
+
+  document.getElementById("summaryLabel2").textContent = "Lab Results Pending";
+  document.getElementById("summaryValue2").textContent = "1";
+
+  document.getElementById("summaryLabel3").textContent = "Appointments Today";
+  document.getElementById("summaryValue3").textContent = "2";
+
+  document.getElementById("summaryLabel4").textContent = "Critical Alerts";
+  document.getElementById("summaryValue4").textContent = "0";
 }
 
 function showPage(pageId) {
@@ -126,10 +177,19 @@ async function renderRecords() {
   const searchInput = document.getElementById("recordSearch");
   const searchText = searchInput ? searchInput.value.toLowerCase() : "";
 
+  if (searchInput && currentUser.role === "patient") {
+  searchInput.classList.add("hidden");
+  } else if (searchInput) {
+  searchInput.classList.remove("hidden");
+  }
+
   recordsList.innerHTML = "";
 
   const records = await apiGetRecords(currentUser);
-  document.getElementById("totalRecords").textContent = records.length;
+  const totalRecords = document.getElementById("totalRecords");
+  if (totalRecords) {
+    totalRecords.textContent = records.length;
+  }
 
   const filteredRecords = records.filter(record => {
     return (
@@ -151,18 +211,23 @@ async function renderRecords() {
         <h3>${record.id}: ${record.patient}</h3>
         <p>${record.type}</p>
         <p><strong>DOB:</strong> ${record.dob} | <strong>Lab Status:</strong> ${record.labStatus}</p>
-        <p>
-          Required Role:
-          <span class="role-pill">${record.requiredRole}</span>
-          <span class="status-pill ${record.status.toLowerCase()}">${record.status}</span>
-        </p>
+
+        ${
+          currentUser.role === "patient"
+            ? ""
+            : `<p>
+              Required Role:
+              <span class="role-pill">${record.requiredRole}</span>
+              <span class="status-pill ${record.status.toLowerCase()}">${record.status}</span>
+            </p>`
+       }
       </div>
 
       <button
-        class="${isAuthorized ? "" : "denied-button"}"
-        onclick="handleRecordAccess('${record.id}')"
+      class="${isAuthorized ? "" : "denied-button"}"
+      onclick="handleRecordAccess('${record.id}')"
       >
-        ${isAuthorized ? "Open Patient Chart" : "Request Access"}
+      ${isAuthorized ? "Open Patient Chart" : "Request Access"}
       </button>
     `;
 
@@ -251,7 +316,9 @@ function openPatientChart(record) {
     `${record.id}: ${record.patient}`;
 
   document.getElementById("chartSubtitle").textContent =
-    `${record.type} | Access Level: ${record.status} | Created: ${record.createdDate}`;
+    currentUser.role === "patient"
+      ? `${record.type} | Last Updated: ${record.createdDate}`
+      : `${record.type} | Access Level: ${record.status} | Created: ${record.createdDate}`;
 
   document.getElementById("chartDOB").textContent = record.dob;
   document.getElementById("chartGender").textContent = record.gender;
@@ -261,16 +328,156 @@ function openPatientChart(record) {
   document.getElementById("chartVitals").textContent = record.vitals;
   document.getElementById("chartDoctor").textContent = record.doctorAssigned;
   document.getElementById("chartLabStatus").textContent = record.labStatus;
-  document.getElementById("chartNotes").textContent = record.notes;
-
-  document.getElementById("chartPrescription").textContent =
-    `${record.medication} - active prescription`;
-
+  document.getElementById("chartSections").innerHTML = renderChartSections(record);
   renderChartAppointments(record.patient);
 
-  document.getElementById("chartActions").innerHTML = renderRoleActions(record);
-
   showPage("patientChartPage");
+}
+
+function renderChartSections(record) {
+  if (currentUser.role === "doctor") {
+    return `
+      <div class="grid">
+        <div class="card">
+          <h2>Visit History</h2>
+          <ul class="audit">
+            <li>${record.visitDate || "2026-05-12"} - ${record.type}</li>
+            <li>2026-03-08 - Annual wellness visit</li>
+            <li>2025-12-19 - Urgent care visit</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Lab Results / Clinical Summary</h2>
+          <p>${record.summary}</p>
+          <p><strong>Lab Status:</strong> ${record.labStatus}</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Prescriptions</h2>
+          <ul class="audit">
+            <li>${record.medication} - active prescription</li>
+            <li>Pharmacy refill status: Active</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Provider Notes</h2>
+          <p>${record.notes}</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Doctor Actions</h2>
+        ${renderRoleActions(record)}
+      </div>
+    `;
+  }
+
+  if (currentUser.role === "nurse") {
+    return `
+      <div class="grid">
+        <div class="card">
+          <h2>Visit History</h2>
+          <ul class="audit">
+            <li>${record.visitDate || "2026-05-12"} - ${record.type}</li>
+            <li>2026-03-08 - Annual wellness visit</li>
+            <li>2025-12-19 - Urgent care visit</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Vitals History</h2>
+          <ul class="audit">
+            <li>Current: ${record.vitals}</li>
+            <li>Previous: BP 126/80, HR 74, Temp 98.3°F</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Care Notes</h2>
+          <p>${record.summary}</p>
+        </div>
+
+        <div class="card">
+          <h2>Lab Status</h2>
+          <p><strong>${record.labStatus}</strong></p>
+          <p class="footer-note">Nurses can review routine lab status and update vitals.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Nurse Actions</h2>
+        ${renderRoleActions(record)}
+      </div>
+    `;
+  }
+
+ if (currentUser.role === "admin") {
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>Appointments</h2>
+        <ul id="chartAppointments" class="audit"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Result Status</h2>
+        <p><strong>${record.labStatus}</strong></p>
+        <p class="footer-note">Clinical details are hidden from front desk users.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Front Desk Actions</h2>
+      ${renderRoleActions(record)}
+    </div>
+  `;
+}
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>Visit History</h2>
+        <ul class="audit">
+          <li>${record.visitDate || "2026-05-12"} - ${record.type}</li>
+          <li>2026-03-08 - Annual wellness visit</li>
+          <li>2025-12-19 - Urgent care visit for fever and cough</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Appointments</h2>
+        <p class="footer-note">You may be due for your annual wellness visit.</p>
+        <ul id="chartAppointments" class="audit"></ul>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Prescriptions</h2>
+        <ul class="audit">
+          <li>${record.medication} - active prescription</li>
+          <li>Pharmacy refill status: Active</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Annual Wellness Visit Reminder</h2>
+        <p>You are due for your yearly wellness appointment.</p>
+        <p class="footer-note">Contact your care team to schedule your annual check-up.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Patient Services</h2>
+      ${renderRoleActions(record)}
+    </div>
+  `;
 }
 
 function renderChartAppointments(patientName) {
@@ -375,13 +582,13 @@ function renderRoleActions(record) {
   }
 
   if (currentUser.role === "patient") {
-    return `
-      <div class="action-box">
-        <h3>Patient Portal</h3>
-        <p class="muted">Patients can view their own records, prescriptions, lab result status, and visit history.</p>
-        <button onclick="downloadPatientSummary()">Download Record Summary</button>
-      </div>
-    `;
+  return `
+    <div class="action-box">
+      <h3>Patient Services</h3>
+      <p class="muted">View your records, prescriptions, lab result status, and visit history.</p>
+      <button onclick="downloadPatientSummary()">Download Health Summary</button>
+    </div>
+  `;
   }
 
   return "";
@@ -583,7 +790,10 @@ function downloadAuditReport() {
 }
 
 function updateLastActivity(activity) {
-  document.getElementById("lastActivity").textContent = activity;
+  const lastActivity = document.getElementById("lastActivity");
+  if (lastActivity) {
+    lastActivity.textContent = activity;
+  }
 }
 
 function startSessionTimer() {
@@ -597,8 +807,11 @@ function startSessionTimer() {
     const minutes = Math.floor(sessionSeconds / 60);
     const seconds = sessionSeconds % 60;
 
-    document.getElementById("sessionTimer").textContent =
-      `${minutes}:${seconds.toString().padStart(2, "0")} remaining`;
+    const sessionTimer = document.getElementById("sessionTimer");
+    if (sessionTimer) {
+      sessionTimer.textContent =
+        `${minutes}:${seconds.toString().padStart(2, "0")} remaining`;
+}
 
     if (sessionSeconds <= 0) {
       clearInterval(sessionInterval);
@@ -609,6 +822,8 @@ function startSessionTimer() {
 }
 
 function logout() {
+
+  document.getElementById("currentUser").classList.add("hidden");
   currentUser = null;
   pendingUser = null;
   selectedRecord = null;
@@ -656,69 +871,39 @@ async function analyzeAuditLogs() {
       ? "Medium"
       : "Low";
 
-  const riskMessage =
-    riskLevel === "High"
-      ? "Repeated failed login activity was detected. This may indicate password guessing or unauthorized access attempts."
-      : riskLevel === "Medium"
-      ? "Some suspicious activity was detected and should be reviewed by an administrator."
-      : "No major suspicious activity was detected in the current session.";
+  const finding =
+    riskLevel === "Low"
+      ? "No unusual access activity was detected in this session."
+      : "Some access activity needs administrator review.";
 
   summaryBox.innerHTML = `
     <div class="security-report">
       <div class="security-report-header">
         <div>
-          <h2>Security Assistant Report</h2>
-          <p>AI-assisted review of recent audit activity.</p>
+          <h2>Security Review Summary</h2>
+          <p>Audit activity reviewed for login attempts, denied access, medical uploads, and system alerts.</p>
         </div>
         <span class="risk-badge ${riskLevel.toLowerCase()}">${riskLevel} Risk</span>
       </div>
 
       <div class="security-summary-grid">
-        <div class="security-card">
-          <span>Failed Logins</span>
-          <strong>${failedLoginAttempts}</strong>
-        </div>
-
-        <div class="security-card">
-          <span>Denied Access</span>
-          <strong>${deniedAccessAttempts}</strong>
-        </div>
-
-        <div class="security-card">
-          <span>Medical Uploads</span>
-          <strong>${uploadedFiles}</strong>
-        </div>
-
-        <div class="security-card">
-          <span>SIEM Alerts</span>
-          <strong>${siemAlerts}</strong>
-        </div>
+        <div class="security-card"><span>Failed Logins</span><strong>${failedLoginAttempts}</strong></div>
+        <div class="security-card"><span>Denied Access</span><strong>${deniedAccessAttempts}</strong></div>
+        <div class="security-card"><span>Medical Uploads</span><strong>${uploadedFiles}</strong></div>
+        <div class="security-card"><span>Alerts</span><strong>${siemAlerts}</strong></div>
       </div>
 
       <div class="security-section">
-        <h3>Incident Summary</h3>
-        <p>${riskMessage}</p>
-        <p>The audit log shows login attempts, authenticated sessions, patient chart views, and Security Assistant review requests. These events help administrators verify accountability and investigate suspicious access patterns.</p>
+        <h3>AI Findings</h3>
+        <p>${finding}</p>
+        <p>MFA login, role-based access, and audit logging are active.</p>
       </div>
 
       <div class="security-section">
-        <h3>Suspicious Activity Review</h3>
-        <p>${failedLoginAttempts > 0 ? "⚠ Multiple failed login attempts were recorded." : "✓ No failed login attempts were recorded."}</p>
-        <p>${deniedAccessAttempts > 0 ? "⚠ At least one user attempted to access a record outside their allowed role." : "✓ No denied record access attempts were recorded."}</p>
-        <p>${uploadedFiles > 0 ? "✓ Medical record uploads were recorded and should be reviewed for approved file types." : "✓ No medical record uploads occurred during this session."}</p>
-      </div>
-
-      <div class="security-section">
-        <h3>Recommended Admin Actions</h3>
-        <p>• Review usernames connected to repeated failed login attempts.</p>
-        <p>• Confirm that MFA remains enabled for all users.</p>
-        <p>• Review denied access events for possible privilege misuse.</p>
-        <p>• Continue monitoring uploads for unsafe file types.</p>
-        <p>• Keep backend RBAC as the final source of authorization.</p>
-      </div>
-
-      <div class="security-note">
-        Important: The LLM Security Assistant only summarizes audit activity. It does not approve access, deny access, edit records, or replace backend RBAC.
+        <h3>Recommended Actions</h3>
+        <p>• Continue monitoring login and access logs.</p>
+        <p>• Review failed login or denied access events when they occur.</p>
+        <p>• Keep backend RBAC as the final authorization control.</p>
       </div>
     </div>
   `;
@@ -727,7 +912,7 @@ async function analyzeAuditLogs() {
   summaryBox.classList.remove("hidden");
 
   if (currentUser) {
-    addAuditLog(currentUser.username, "Requested AI security audit review", "Success");
+    addAuditLog(currentUser.username, "Requested security audit review", "Success");
   }
 
   renderAuditLog();
@@ -760,5 +945,12 @@ function configureRoleNavigation() {
     auditButton.classList.remove("hidden");
     securityButton.classList.remove("hidden");
     adminButton.classList.remove("hidden");
+  }
+
+  if (currentUser.role === "patient") {
+    uploadButton.classList.add("hidden");
+    auditButton.classList.add("hidden");
+    securityButton.classList.add("hidden");
+    adminButton.classList.add("hidden");
   }
 }
