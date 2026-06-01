@@ -1,4 +1,20 @@
+// =====================================================
+// Secure Medical Record Management System
+// Frontend API Layer
+//
+// This file handles communication with the backend API
+// and provides fallback mock data when the backend is
+// unavailable. It also manages audit logs, medical
+// records, appointments, prescriptions, and security
+// assistant functionality.
+// =====================================================
+
+// Backend API base URL
+
 const API_BASE_URL = "http://127.0.0.1:5000";
+
+// Mock user accounts used when the backend server
+// is unavailable during development or demonstrations.
 
 const fallbackUsers = {
   doctor: {
@@ -46,6 +62,10 @@ const fallbackUsers = {
     mfaStatus: "Enabled"
   }
 };
+
+// Sample medical records used as fallback data.
+// These records demonstrate role-based access control
+// and different record sensitivity levels.
 
 const fallbackRecords = [
   {
@@ -130,6 +150,8 @@ const fallbackRecords = [
   }
 ];
 
+// Sample appointment data for frontend testing.
+
 const fallbackAppointments = [
   {
     id: "APT-501",
@@ -148,6 +170,9 @@ const fallbackAppointments = [
     status: "Scheduled"
   }
 ];
+
+// Sample prescription records used when backend
+// services are unavailable.
 
 const fallbackPrescriptions = [
   {
@@ -168,10 +193,16 @@ const fallbackPrescriptions = [
   }
 ];
 
+// Local application state used as a fallback cache.
+
 let localAuditLogs = [];
 let cachedRecords = fallbackRecords;
 let cachedAppointments = fallbackAppointments;
 let cachedPrescriptions = fallbackPrescriptions;
+
+// Authenticates a user through the backend API.
+// Falls back to local mock accounts if the backend
+// cannot be reached.
 
 async function apiLogin(username, password) {
   try {
@@ -200,6 +231,11 @@ async function apiLogin(username, password) {
     return null;
   }
 }
+
+// Retrieves medical records available to the current
+// user based on their assigned role.
+// RBAC filtering is enforced by the backend when
+// available and simulated locally as a fallback.
 
 async function apiGetRecords(user) {
   try {
@@ -253,6 +289,9 @@ async function apiGetRecords(user) {
   }
 }
 
+// Converts backend record formats into a consistent
+// frontend structure regardless of database schema.
+
 function normalizeRecords(records) {
   return records.map(record => ({
     id: record.id || record.record_id || "MR-UNKNOWN",
@@ -275,6 +314,10 @@ function normalizeRecords(records) {
     notes: record.notes || record.doctor_notes || "No provider notes available."
   }));
 }
+
+// Uploads a medical record to the backend.
+// A simulated upload is used during frontend-only
+// demonstrations when the backend is unavailable.
 
 async function apiUploadRecord(user, fileName, patientName, recordType, fileSize) {
   try {
@@ -326,6 +369,9 @@ async function apiUploadRecord(user, fileName, patientName, recordType, fileSize
   }
 }
 
+// Retrieves audit log entries from the backend.
+// Falls back to locally stored audit logs if needed.
+
 async function apiGetAuditLogs() {
   try {
     const response = await fetch(`${API_BASE_URL}/api/audit-logs`);
@@ -338,6 +384,12 @@ async function apiGetAuditLogs() {
     return localAuditLogs;
   }
 }
+
+// Security Assistant feature.
+// Sends audit logs to the backend LLM service for
+// security analysis and risk assessment.
+// Generates a local summary if the AI service is
+// unavailable.
 
 async function apiAnalyzeAuditLogs() {
   try {
@@ -378,6 +430,9 @@ async function apiAnalyzeAuditLogs() {
   }
 }
 
+// Simple helper functions that expose cached data
+// to the frontend interface.
+
 function getMedicalRecords() {
   return cachedRecords;
 }
@@ -389,6 +444,9 @@ function getAppointments() {
 function getPrescriptions() {
   return cachedPrescriptions;
 }
+
+// Records a security-relevant action in the local
+// audit trail for monitoring and demonstration.
 
 function addAuditLog(user, action, status) {
   localAuditLogs.unshift({
@@ -403,17 +461,27 @@ function getAuditLogs() {
   return localAuditLogs;
 }
 
+// Returns the number of failed login attempts
+// recorded during the current session.
+
 function getFailedLoginCount() {
   return localAuditLogs.filter(log =>
     log.action.toLowerCase().includes("failed login")
   ).length;
 }
 
+// Returns the number of denied access events
+// recorded in the audit log.
+
 function getDeniedAccessCount() {
   return localAuditLogs.filter(log =>
     log.status === "Denied"
   ).length;
 }
+
+// Allows doctors to append provider notes to an
+// existing medical record and records the action
+// in the audit log.
 
 function addProviderNote(recordId, noteText, username) {
   const record = fallbackRecords.find(item => item.id === recordId);
@@ -423,6 +491,9 @@ function addProviderNote(recordId, noteText, username) {
     addAuditLog(username, `Added provider note to ${recordId}`, "Success");
   }
 }
+
+// Creates a new prescription entry and logs the
+// action for auditing purposes.
 
 function addPrescription(patientName, medication, dosage, username) {
   fallbackPrescriptions.unshift({
@@ -437,6 +508,9 @@ function addPrescription(patientName, medication, dosage, username) {
   addAuditLog(username, `Created prescription for ${patientName}`, "Success");
 }
 
+// Updates patient vital signs and records the
+// modification in the audit log.
+
 function addVitals(patientName, vitals, username) {
   const record = fallbackRecords.find(item => item.patient === patientName);
 
@@ -445,6 +519,9 @@ function addVitals(patientName, vitals, username) {
     addAuditLog(username, `Updated vitals for ${patientName}`, "Success");
   }
 }
+
+// Schedules a new appointment and creates an
+// associated audit log entry.
 
 function addAppointment(patientName, date, time, reason, username) {
   fallbackAppointments.unshift({
@@ -458,6 +535,9 @@ function addAppointment(patientName, date, time, reason, username) {
 
   addAuditLog(username, `Scheduled appointment for ${patientName}`, "Success");
 }
+
+// Expose API functions globally so they can be
+// accessed by the frontend interface.
 
 window.apiLogin = apiLogin;
 window.apiGetRecords = apiGetRecords;
@@ -473,5 +553,7 @@ window.addProviderNote = addProviderNote;
 window.addPrescription = addPrescription;
 window.addVitals = addVitals;
 window.addAppointment = addAppointment;
+
+// Verify that the API module loaded successfully.
 
 console.log("api.js loaded successfully");

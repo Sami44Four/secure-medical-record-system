@@ -1,15 +1,24 @@
+// Tracks the currently logged-in user and the user waiting for MFA verification.
 let currentUser = null;
 let pendingUser = null;
 let selectedRecord = null;
 
+// Frontend counters used for the admin dashboard and Security Review page.
 let failedLoginAttempts = 0;
 let deniedAccessAttempts = 0;
 let uploadedFiles = 0;
 let siemAlerts = 0;
 
+// Session timer defaults to 15 minutes.
 let sessionSeconds = 900;
 let sessionInterval;
 
+/*
+  Handles the login form submission.
+
+  This function validates required fields, sends credentials to the backend,
+  tracks failed login attempts, and opens the MFA modal for valid users.
+*/
 async function handleLogin() {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
@@ -45,6 +54,11 @@ async function handleLogin() {
   document.getElementById("mfaModal").classList.remove("hidden");
 }
 
+/*
+  Verifies the simulated MFA code and initializes the protected portal view.
+
+  MFA is simulated for this course project. The accepted code is 123456.
+*/
 async function verifyMFA() {
   const code = document.getElementById("mfaCode").value.trim();
   const mfaResult = document.getElementById("mfaResult");
@@ -60,19 +74,20 @@ async function verifyMFA() {
   document.getElementById("loginPage").classList.add("hidden");
   document.getElementById("protectedContent").classList.remove("hidden");
   document.getElementById("navMenu").classList.remove("hidden");
-  
+
+  // Patients do not need the staff notification bell.
   if (currentUser.role === "patient") {
-  document.getElementById("notificationBell").classList.add("hidden");
+    document.getElementById("notificationBell").classList.add("hidden");
   } else {
-  document.getElementById("notificationBell").classList.remove("hidden");
+    document.getElementById("notificationBell").classList.remove("hidden");
   }
 
   document.getElementById("currentUser").classList.remove("hidden");
 
   document.getElementById("currentUser").textContent =
-  currentUser.role === "patient"
-    ? `Welcome, ${currentUser.fullName}`
-    : `${currentUser.fullName} (${currentUser.role})`;
+    currentUser.role === "patient"
+      ? `Welcome, ${currentUser.fullName}`
+      : `${currentUser.fullName} (${currentUser.role})`;
 
   addAuditLog(currentUser.username, `${currentUser.role} logged in with MFA`, "Success");
 
@@ -87,10 +102,17 @@ async function verifyMFA() {
   startSessionTimer();
 }
 
+// Closes the MFA modal without logging the user in.
 function cancelMFA() {
   document.getElementById("mfaModal").classList.add("hidden");
 }
 
+/*
+  Renders the profile card for the current user.
+
+  Patient labels are adjusted so the profile reads like a patient account
+  instead of a staff employee profile.
+*/
 function renderProfile() {
   document.getElementById("profileName").textContent = currentUser.fullName;
   document.getElementById("profileRole").textContent = currentUser.role.toUpperCase();
@@ -128,6 +150,9 @@ function renderProfile() {
       .slice(0, 2);
 }
 
+/*
+  Updates the dashboard summary cards based on the current user's role.
+*/
 function renderDashboardSummary() {
   const title = document.getElementById("dashboardSummaryTitle");
 
@@ -164,6 +189,7 @@ function renderDashboardSummary() {
   document.getElementById("summaryValue4").textContent = "0";
 }
 
+// Shows one page and hides all other portal pages.
 function showPage(pageId) {
   document.querySelectorAll(".page").forEach(page => {
     page.classList.add("hidden");
@@ -172,21 +198,28 @@ function showPage(pageId) {
   document.getElementById(pageId).classList.remove("hidden");
 }
 
+/*
+  Loads and displays medical records available to the current user.
+
+  Patient users do not see the record search bar because they only view
+  their own records.
+*/
 async function renderRecords() {
   const recordsList = document.getElementById("recordsList");
   const searchInput = document.getElementById("recordSearch");
   const searchText = searchInput ? searchInput.value.toLowerCase() : "";
 
   if (searchInput && currentUser.role === "patient") {
-  searchInput.classList.add("hidden");
+    searchInput.classList.add("hidden");
   } else if (searchInput) {
-  searchInput.classList.remove("hidden");
+    searchInput.classList.remove("hidden");
   }
 
   recordsList.innerHTML = "";
 
   const records = await apiGetRecords(currentUser);
   const totalRecords = document.getElementById("totalRecords");
+
   if (totalRecords) {
     totalRecords.textContent = records.length;
   }
@@ -220,14 +253,14 @@ async function renderRecords() {
               <span class="role-pill">${record.requiredRole}</span>
               <span class="status-pill ${record.status.toLowerCase()}">${record.status}</span>
             </p>`
-       }
+        }
       </div>
 
       <button
-      class="${isAuthorized ? "" : "denied-button"}"
-      onclick="handleRecordAccess('${record.id}')"
+        class="${isAuthorized ? "" : "denied-button"}"
+        onclick="handleRecordAccess('${record.id}')"
       >
-      ${isAuthorized ? "Open Patient Chart" : "Request Access"}
+        ${isAuthorized ? "Open Patient Chart" : "Request Access"}
       </button>
     `;
 
@@ -239,6 +272,11 @@ async function renderRecords() {
   }
 }
 
+/*
+  Frontend role check used to control visible record actions.
+
+  The backend should remain the final source of truth for authorization.
+*/
 function canAccessRecord(record) {
   if (!currentUser) {
     return false;
@@ -263,6 +301,9 @@ function canAccessRecord(record) {
   return false;
 }
 
+/*
+  Opens a patient chart when authorized, or logs a denied access attempt.
+*/
 function handleRecordAccess(recordId) {
   const accessResult = document.getElementById("accessResult");
   const record = getMedicalRecords().find(item => item.id === recordId);
@@ -309,6 +350,9 @@ function handleRecordAccess(recordId) {
   updateLastActivity(`Opened patient chart ${record.id}`);
 }
 
+/*
+  Populates the patient chart page with selected record details.
+*/
 function openPatientChart(record) {
   selectedRecord = record;
 
@@ -329,11 +373,18 @@ function openPatientChart(record) {
   document.getElementById("chartDoctor").textContent = record.doctorAssigned;
   document.getElementById("chartLabStatus").textContent = record.labStatus;
   document.getElementById("chartSections").innerHTML = renderChartSections(record);
+
   renderChartAppointments(record.patient);
 
   showPage("patientChartPage");
 }
 
+/*
+  Builds the role-specific chart sections.
+
+  Doctor, nurse, admin, and patient users see different content and actions
+  to demonstrate least-privilege access.
+*/
 function renderChartSections(record) {
   if (currentUser.role === "doctor") {
     return `
@@ -417,27 +468,27 @@ function renderChartSections(record) {
     `;
   }
 
- if (currentUser.role === "admin") {
-  return `
-    <div class="grid">
-      <div class="card">
-        <h2>Appointments</h2>
-        <ul id="chartAppointments" class="audit"></ul>
+  if (currentUser.role === "admin") {
+    return `
+      <div class="grid">
+        <div class="card">
+          <h2>Appointments</h2>
+          <ul id="chartAppointments" class="audit"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Result Status</h2>
+          <p><strong>${record.labStatus}</strong></p>
+          <p class="footer-note">Clinical details are hidden from front desk users.</p>
+        </div>
       </div>
 
       <div class="card">
-        <h2>Result Status</h2>
-        <p><strong>${record.labStatus}</strong></p>
-        <p class="footer-note">Clinical details are hidden from front desk users.</p>
+        <h2>Front Desk Actions</h2>
+        ${renderRoleActions(record)}
       </div>
-    </div>
-
-    <div class="card">
-      <h2>Front Desk Actions</h2>
-      ${renderRoleActions(record)}
-    </div>
-  `;
-}
+    `;
+  }
 
   return `
     <div class="grid">
@@ -480,6 +531,7 @@ function renderChartSections(record) {
   `;
 }
 
+// Displays appointments associated with the selected patient.
 function renderChartAppointments(patientName) {
   const appointmentList = document.getElementById("chartAppointments");
 
@@ -504,6 +556,9 @@ function renderChartAppointments(patientName) {
   });
 }
 
+/*
+  Returns action controls based on the logged-in user's role.
+*/
 function renderRoleActions(record) {
   if (!currentUser) {
     return "";
@@ -545,55 +600,56 @@ function renderRoleActions(record) {
   }
 
   if (currentUser.role === "admin") {
-  return `
-    <div class="action-box">
-      <h3>Front Desk Actions</h3>
-      <p class="muted">
-        Admin/front desk can schedule appointments and check result status, but cannot
-        view or edit clinical notes, diagnoses, or prescriptions.
-      </p>
+    return `
+      <div class="action-box">
+        <h3>Front Desk Actions</h3>
+        <p class="muted">
+          Admin/front desk can schedule appointments and check result status, but cannot
+          view or edit clinical notes, diagnoses, or prescriptions.
+        </p>
 
-      <label>Appointment Date</label>
-      <input type="date" id="appointmentDate" />
+        <label>Appointment Date</label>
+        <input type="date" id="appointmentDate" />
 
-      <label>Appointment Time Window</label>
-      <select id="appointmentTime">
-        <option value="">Select a time window</option>
-        <option value="8:00 AM - 9:00 AM">8:00 AM - 9:00 AM</option>
-        <option value="9:00 AM - 10:00 AM">9:00 AM - 10:00 AM</option>
-        <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
-        <option value="1:00 PM - 2:00 PM">1:00 PM - 2:00 PM</option>
-        <option value="2:00 PM - 3:00 PM">2:00 PM - 3:00 PM</option>
-      </select>
+        <label>Appointment Time Window</label>
+        <select id="appointmentTime">
+          <option value="">Select a time window</option>
+          <option value="8:00 AM - 9:00 AM">8:00 AM - 9:00 AM</option>
+          <option value="9:00 AM - 10:00 AM">9:00 AM - 10:00 AM</option>
+          <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
+          <option value="1:00 PM - 2:00 PM">1:00 PM - 2:00 PM</option>
+          <option value="2:00 PM - 3:00 PM">2:00 PM - 3:00 PM</option>
+        </select>
 
-      <label>Provider</label>
-      <select id="appointmentDoctor">
-        <option value="Dr. Sarah Ahmed">Dr. Sarah Ahmed</option>
-        <option value="Dr. James Carter">Dr. James Carter</option>
-        <option value="Dr. Lina Patel">Dr. Lina Patel</option>
-      </select>
+        <label>Provider</label>
+        <select id="appointmentDoctor">
+          <option value="Dr. Sarah Ahmed">Dr. Sarah Ahmed</option>
+          <option value="Dr. James Carter">Dr. James Carter</option>
+          <option value="Dr. Lina Patel">Dr. Lina Patel</option>
+        </select>
 
-      <label>Reason for Visit</label>
-      <input type="text" id="appointmentReason" placeholder="Annual check-up, follow-up, lab review..." />
+        <label>Reason for Visit</label>
+        <input type="text" id="appointmentReason" placeholder="Annual check-up, follow-up, lab review..." />
 
-      <button onclick="submitAppointment()">Schedule Appointment</button>
-    </div>
-  `;
+        <button onclick="submitAppointment()">Schedule Appointment</button>
+      </div>
+    `;
   }
 
   if (currentUser.role === "patient") {
-  return `
-    <div class="action-box">
-      <h3>Patient Services</h3>
-      <p class="muted">View your records, prescriptions, lab result status, and visit history.</p>
-      <button onclick="downloadPatientSummary()">Download Health Summary</button>
-    </div>
-  `;
+    return `
+      <div class="action-box">
+        <h3>Patient Services</h3>
+        <p class="muted">View your records, prescriptions, lab result status, and visit history.</p>
+        <button onclick="downloadPatientSummary()">Download Health Summary</button>
+      </div>
+    `;
   }
 
   return "";
 }
 
+// Adds a doctor provider note to the selected patient record.
 function submitProviderNote() {
   const noteText = document.getElementById("providerNoteInput").value.trim();
 
@@ -614,6 +670,7 @@ function submitProviderNote() {
   updateLastActivity(`Added provider note to ${selectedRecord.id}`);
 }
 
+// Creates a prescription entry for the selected patient record.
 function submitPrescription() {
   const medication = document.getElementById("prescriptionMedication").value.trim();
   const dosage = document.getElementById("prescriptionDosage").value.trim();
@@ -634,6 +691,7 @@ function submitPrescription() {
   updateLastActivity(`Created prescription for ${selectedRecord.patient}`);
 }
 
+// Updates vitals for a selected patient record.
 function submitVitals() {
   const vitals = document.getElementById("vitalsInput").value.trim();
 
@@ -654,6 +712,7 @@ function submitVitals() {
   updateLastActivity(`Updated vitals for ${selectedRecord.patient}`);
 }
 
+// Schedules an appointment from the admin/front desk workflow.
 function submitAppointment() {
   const date = document.getElementById("appointmentDate").value;
   const time = document.getElementById("appointmentTime").value;
@@ -676,10 +735,17 @@ function submitAppointment() {
   updateLastActivity(`Scheduled appointment for ${selectedRecord.patient}`);
 }
 
+// Simulates downloading a patient summary document.
 function downloadPatientSummary() {
   alert("Patient record summary downloaded successfully.\n\n(patient_summary_mock.pdf)");
 }
 
+/*
+  Validates and submits uploaded record metadata.
+
+  The frontend rejects missing fields and unsupported file extensions before
+  sending the request to the backend.
+*/
 async function handleUpload() {
   const fileName = document.getElementById("fileName").value.trim();
   const patientName = document.getElementById("patientName").value.trim();
@@ -751,6 +817,7 @@ async function handleUpload() {
   document.getElementById("fileSize").value = "";
 }
 
+// Renders current audit log entries in the Audit Logs page.
 function renderAuditLog() {
   const auditLog = document.getElementById("auditLog");
   auditLog.innerHTML = "";
@@ -765,6 +832,7 @@ function renderAuditLog() {
   });
 }
 
+// Updates admin statistic counters from current frontend session values.
 function updateAdminStats() {
   const failed = document.getElementById("failedLoginCount");
   const denied = document.getElementById("deniedAccessCount");
@@ -777,18 +845,21 @@ function updateAdminStats() {
   if (alerts) alerts.textContent = siemAlerts;
 }
 
+// Shows a simple staff notification summary.
 function showNotifications() {
   alert(
     "Notifications:\n\n• MFA verified\n• Audit logging active\n• TLS 1.3 secure connection\n• No critical system failures"
   );
 }
 
+// Simulates downloading an audit report.
 function downloadAuditReport() {
   alert(
     "Audit report downloaded successfully.\n\n(report_download_mock.pdf)"
   );
 }
 
+// Updates the dashboard with the most recent user activity.
 function updateLastActivity(activity) {
   const lastActivity = document.getElementById("lastActivity");
   if (lastActivity) {
@@ -796,6 +867,7 @@ function updateLastActivity(activity) {
   }
 }
 
+// Starts the frontend session countdown timer.
 function startSessionTimer() {
   clearInterval(sessionInterval);
 
@@ -811,7 +883,7 @@ function startSessionTimer() {
     if (sessionTimer) {
       sessionTimer.textContent =
         `${minutes}:${seconds.toString().padStart(2, "0")} remaining`;
-}
+    }
 
     if (sessionSeconds <= 0) {
       clearInterval(sessionInterval);
@@ -821,8 +893,8 @@ function startSessionTimer() {
   }, 1000);
 }
 
+// Clears user state and returns the application to the login screen.
 function logout() {
-
   document.getElementById("currentUser").classList.add("hidden");
   currentUser = null;
   pendingUser = null;
@@ -841,6 +913,7 @@ function logout() {
   document.getElementById("mfaCode").value = "";
 }
 
+// Displays the disabled account creation notice.
 function showCreateAccountMessage() {
   const loginResult = document.getElementById("loginResult");
 
@@ -851,6 +924,7 @@ function showCreateAccountMessage() {
   );
 }
 
+// Displays the simulated password reset notice.
 function showForgotPasswordMessage() {
   const loginResult = document.getElementById("loginResult");
 
@@ -861,6 +935,12 @@ function showForgotPasswordMessage() {
   );
 }
 
+/*
+  Generates the Security Review summary.
+
+  Risk level is based on failed logins, denied access attempts, medical uploads,
+  and frontend SIEM-style alert counters.
+*/
 async function analyzeAuditLogs() {
   const summaryBox = document.getElementById("llmSummary");
 
@@ -868,8 +948,8 @@ async function analyzeAuditLogs() {
     failedLoginAttempts >= 5 || siemAlerts >= 3 || deniedAccessAttempts > 0
       ? "High"
       : failedLoginAttempts >= 2 || siemAlerts > 0
-      ? "Medium"
-      : "Low";
+        ? "Medium"
+        : "Low";
 
   const finding =
     riskLevel === "Low"
@@ -918,12 +998,16 @@ async function analyzeAuditLogs() {
   renderAuditLog();
 }
 
+// Utility function for displaying user-facing status messages.
 function showMessage(element, message, className) {
   element.textContent = message;
   element.className = `result ${className}`;
   element.classList.remove("hidden");
 }
 
+/*
+  Shows or hides navigation buttons according to the logged-in user's role.
+*/
 function configureRoleNavigation() {
   const uploadButton = document.getElementById("uploadNavButton");
   const auditButton = document.getElementById("auditNavButton");

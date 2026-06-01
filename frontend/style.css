@@ -1,3 +1,8 @@
+```css
+/* =====================================================
+   Global Reset and Base Page Styling
+===================================================== */
+
 * {
   box-sizing: border-box;
 }
@@ -13,6 +18,10 @@ body {
   display: flex;
   min-height: 100vh;
 }
+
+/* =====================================================
+   Sidebar Layout and Navigation
+===================================================== */
 
 .sidebar {
   width: 250px;
@@ -59,6 +68,10 @@ body {
   margin-top: 30px;
 }
 
+/* =====================================================
+   Main Content and Header
+===================================================== */
+
 .main {
   flex: 1;
   padding: 35px;
@@ -88,6 +101,10 @@ header p,
   font-weight: bold;
 }
 
+/* =====================================================
+   Layout Grids and Card Containers
+===================================================== */
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -107,6 +124,10 @@ header p,
   margin-bottom: 22px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
+
+/* =====================================================
+   Buttons and User Actions
+===================================================== */
 
 .user-buttons {
   display: flex;
@@ -135,6 +156,10 @@ button:hover {
 .nurse {
   background: #7c3aed;
 }
+
+/* =====================================================
+   Dashboard Summary and Profile Details
+===================================================== */
 
 .control {
   display: flex;
@@ -186,6 +211,10 @@ button:hover {
   margin-bottom: 5px;
 }
 
+/* =====================================================
+   Medical Records and Protected Data Labels
+===================================================== */
+
 .record-header {
   display: flex;
   justify-content: space-between;
@@ -212,6 +241,10 @@ button:hover {
   background: #f8fafc;
 }
 
+/* =====================================================
+   Status Messages and Alerts
+===================================================== */
+
 .result {
   margin-top: 18px;
   padding: 14px;
@@ -234,6 +267,10 @@ button:hover {
   color: #92400e;
 }
 
+/* =====================================================
+   Audit Log Styling
+===================================================== */
+
 .audit {
   list-style: none;
   padding: 0;
@@ -247,6 +284,10 @@ button:hover {
   margin-bottom: 10px;
   border-radius: 8px;
 }
+
+/* =====================================================
+   Form Inputs and Links
+===================================================== */
 
 label {
   display: block;
@@ -274,6 +315,10 @@ input {
   text-decoration: underline;
 }
 
+/* =====================================================
+   Role, Access, and Utility Classes
+===================================================== */
+
 .role-pill {
   background: #e0f2fe;
   color: #075985;
@@ -295,6 +340,10 @@ input {
   margin-top: 18px;
   font-size: 14px;
 }
+
+/* =====================================================
+   Modal Window Styling
+===================================================== */
 
 .modal {
   position: fixed;
@@ -326,6 +375,10 @@ input {
   padding: 8px 12px;
 }
 
+/* =====================================================
+   Report and Responsive Layout Styling
+===================================================== */
+
 .fake-report {
   background: #f8fafc;
   border-radius: 14px;
@@ -347,6 +400,11 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================
+   Footer Notes and Record Status Pills
+===================================================== */
+
 .footer-note {
   margin-top: 18px;
   font-weight: bold;
@@ -375,6 +433,11 @@ input {
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* =====================================================
+   Header Actions and Notifications
+===================================================== */
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -392,6 +455,10 @@ input {
   box-shadow: 0 3px 12px rgba(0,0,0,0.08);
 }
 
+/* =====================================================
+   Repeated Status Styling Used by Dynamic Record Cards
+===================================================== */
+
 .footer-note {
   margin-top: 18px;
   font-weight: bold;
@@ -420,6 +487,10 @@ input {
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* =====================================================
+   Alternate Close Button and Patient Chart Layout
+===================================================== */
 
 .close-btn-alt {
   background: #64748b;
@@ -439,6 +510,10 @@ input {
   padding: 10px;
   border-radius: 10px;
 }
+
+/* =====================================================
+   Medical Action Boxes for Doctor and Nurse Workflows
+===================================================== */
 
 .action-box {
   margin-top: 20px;
@@ -476,6 +551,10 @@ input {
   line-height: 1.6;
 }
 
+/* =====================================================
+   Detailed Action Box Styling
+===================================================== */
+
 .action-box {
   background: white;
   border: 1px solid #dbeafe;
@@ -509,6 +588,10 @@ input {
   margin-bottom: 10px;
 }
 
+/* =====================================================
+   Patient Report and Chart Detail Styling
+===================================================== */
+
 .fake-report h3 {
   color: #0f172a;
   border-bottom: 1px solid #e5e7eb;
@@ -532,6 +615,10 @@ input {
   border-radius: 12px;
   padding: 14px;
 }
+
+/* =====================================================
+   Security Dashboard Summary Cards
+===================================================== */
 
 .security-summary-grid {
   display: grid;
@@ -558,6 +645,10 @@ input {
   font-size: 22px;
   color: #92400e;
 }
+
+/* =====================================================
+   Security Report Sections and Risk Badges
+===================================================== */
 
 .security-section {
   background: white;
@@ -628,6 +719,10 @@ input {
   font-weight: normal;
 }
 
+/* =====================================================
+   Select Dropdowns
+===================================================== */
+
 select {
   width: 100%;
   padding: 12px;
@@ -637,6 +732,10 @@ select {
   margin-bottom: 12px;
   background: white;
 }
+
+/* =====================================================
+   Login Page Image Card
+===================================================== */
 
 .login-image-card {
   overflow: hidden;

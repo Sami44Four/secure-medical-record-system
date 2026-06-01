@@ -1,6 +1,8 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Basic page setup and stylesheet connection -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WWU Medical Center</title>
@@ -9,11 +11,13 @@
 
 <body>
   <div class="app">
+    <!-- Sidebar contains the application name, access label, and navigation links -->
     <aside class="sidebar">
       <h2>WWU Health</h2>
       <p>Patient Portal</p>
       <div class="badge">Secure Access</div>
 
+      <!-- Navigation menu is hidden until the user successfully logs in -->
       <div id="navMenu" class="nav hidden">
         <button onclick="showPage('dashboardPage')">Dashboard</button>
         <button onclick="showPage('recordsPage')">Patient Records</button>
@@ -26,6 +30,7 @@
     </aside>
 
     <main class="main">
+      <!-- Header shows the system title, notification button, and current logged-in user -->
       <header>
         <div>
           <h1>Western Washington University Medical Center</h1>
@@ -38,6 +43,7 @@
         </div>
       </header>
 
+      <!-- Login page displayed before the protected healthcare portal is shown -->
       <section id="loginPage" class="grid">
         <div class="card">
           <h2>Secure Login</h2>
@@ -59,6 +65,7 @@
           <div id="loginResult" class="result hidden"></div>
         </div>
 
+        <!-- Informational card shown beside the login form -->
         <div class="card login-image-card">
           <img
             src="https://d13b2ieg84qqce.cloudfront.net/8b927b2c0732063cddac5718142cd63b47dd8749"
@@ -81,8 +88,10 @@
         </div>
       </section>
 
+      <!-- Protected content is hidden until authentication and MFA are completed -->
       <section id="protectedContent" class="hidden">
 
+        <!-- Dashboard displays user profile details and role-specific summary information -->
         <section id="dashboardPage" class="page">
           <div class="profile-grid">
             <div class="card profile-card">
@@ -114,6 +123,7 @@
           </div>
         </section>
 
+        <!-- Patient Records page supports searching and role-based record access -->
         <section id="recordsPage" class="page hidden">
           <div class="card record-card">
             <div class="record-header">
@@ -136,6 +146,7 @@
           </div>
         </section>
 
+        <!-- Patient chart page displays detailed protected health information -->
         <section id="patientChartPage" class="page hidden">
           <div class="card">
             <button onclick="showPage('recordsPage')">← Back to Patient Records</button>
@@ -163,6 +174,7 @@
           <div id="chartSections"></div>
         </section>
 
+        <!-- New record form validates and saves uploaded medical record information -->
         <section id="uploadPage" class="page hidden">
           <div class="card">
             <h2>New Medical Record</h2>
@@ -186,6 +198,7 @@
           </div>
         </section>
 
+        <!-- Audit log records system activity for accountability and monitoring -->
         <section id="auditPage" class="page hidden">
           <div class="card">
             <div class="record-header">
@@ -199,6 +212,7 @@
           </div>
         </section>
 
+        <!-- Security Assistant reviews audit activity and highlights suspicious behavior -->
         <section id="securityAssistantPage" class="page hidden">
           <div class="card">
             <div class="record-header">
@@ -217,6 +231,7 @@
           </div>
         </section>
 
+        <!-- Admin statistics page gives front desk staff a limited operational overview -->
         <section id="adminStatsPage" class="page hidden">
           <div class="card">
             <h2>Front Desk Overview</h2>
@@ -237,6 +252,7 @@
     </main>
   </div>
 
+  <!-- MFA modal adds a second verification step after password login -->
   <div id="mfaModal" class="modal hidden">
     <div class="modal-content">
       <h2>MFA Verification</h2>
@@ -252,7 +268,9 @@
     </div>
   </div>
 
+  <!-- JavaScript files connect the frontend to mock API data and application behavior -->
   <script src="api.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+```
