@@ -1,6 +1,7 @@
 from flask import jsonify
 from backend.db import get_db_connection
 
+# Add an entry to the audit log
 def add_log(username, action, status):
     conn = get_db_connection()
 
@@ -12,7 +13,7 @@ def add_log(username, action, status):
     conn.commit()
     conn.close()
 
-
+# Retrieve all audit log entries
 def get_logs():
     conn = get_db_connection()
 
