@@ -1,5 +1,6 @@
 from werkzeug.security import generate_password_hash
 
+# Sample user accounts with role and profile information
 users = {
     "doctor1": {
         "password": generate_password_hash("Doctor123!"),

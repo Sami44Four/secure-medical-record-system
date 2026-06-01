@@ -2,6 +2,7 @@ from flask import request, jsonify
 from backend.logs import add_log
 from backend.db import get_db_connection
 
+# Convert a database record into API response format
 def format_record(record):
     return {
         "id": record["id"],
@@ -24,23 +25,27 @@ def format_record(record):
         "notes": record["doctor_notes"] if "doctor_notes" in record.keys() else "No provider notes available."
     }
 
+# Retrieve records based on the user's role
 def get_records():
     role = request.headers.get("Role")
     username = request.headers.get("Username", "unknown")
 
     conn = get_db_connection()
 
+    # Doctors can view all records
     if role == "doctor":
         records = conn.execute("""
             SELECT * FROM medical_records
         """).fetchall()
 
+    # Nurses can only view nurse-level records
     elif role == "nurse":
         records = conn.execute("""
             SELECT * FROM medical_records
             WHERE access_level = 'nurse'
         """).fetchall()
 
+    # Admins can view limited patient information
     elif role == "admin":
         records = conn.execute("""
             SELECT * FROM medical_records
@@ -52,6 +57,7 @@ def get_records():
             "Warning"
         )
 
+        # Hide sensitive clinical information
         formatted = []
         for record in records:
             item = format_record(record)
@@ -64,6 +70,7 @@ def get_records():
         conn.close()
         return jsonify(formatted)
 
+    # Patients can only view their own records
     elif role == "patient":
         user = conn.execute("""
             SELECT full_name FROM users WHERE username = ?
@@ -79,15 +86,18 @@ def get_records():
             WHERE patient_name = ?
         """, (user["full_name"],)).fetchall()
 
+    # Reject unknown roles
     else:
         conn.close()
         add_log(username, "Unauthorized role attempted record access", "Denied")
         return jsonify({"message": "Unauthorized role"}), 403
 
+    # Format records for API response
     formatted_records = [format_record(record) for record in records]
 
     conn.close()
 
+    # Log successful access
     add_log(username, f"Fetched records for role: {role}", "Success")
 
     return jsonify(formatted_records)

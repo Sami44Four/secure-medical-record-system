@@ -1,16 +1,22 @@
 from flask import request, jsonify
 from werkzeug.security import check_password_hash
+
+# Database connection and audit logging helpers
 from backend.db import get_db_connection
 from backend.logs import add_log
 
+# Handle user login requests
 def login():
+    # Get login data from the request body
     data = request.get_json()
 
     username = data.get("username")
     password = data.get("password")
 
+    # Connect to the database
     conn = get_db_connection()
 
+    # Find user by username
     user = conn.execute(
         "SELECT * FROM users WHERE username = ?",
         (username,)
@@ -18,26 +24,28 @@ def login():
 
     conn.close()
 
+    # Verify password and return user information
     if user and check_password_hash(user["password_hash"], password):
 
+        # Log successful login
         add_log(username, f"{user['role']} logged in successfully", "Success")
 
         return jsonify({
             "message": "Login successful",
             "user": {
-            "username": user["username"],
-            "role": user["role"],
-            "fullName": user["full_name"],
-            "department": user["department"],
-            "employeeId": user["employee_id"],
-            "credentials": user["credentials"],
-            "years": user["years"],
-            "lastLogin": user["last_login"],
-            "mfaStatus": "Enabled"
+                "username": user["username"],
+                "role": user["role"],
+                "fullName": user["full_name"],
+                "department": user["department"],
+                "employeeId": user["employee_id"],
+                "credentials": user["credentials"],
+                "years": user["years"],
+                "lastLogin": user["last_login"],
+                "mfaStatus": "Enabled"
             }
-
         })
 
+    # Log failed login attempt
     add_log(username or "unknown", "Failed login attempt", "Denied")
 
     return jsonify({
