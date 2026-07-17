@@ -21,7 +21,6 @@ ROLE_ALIASES = {
     "patient": "patient"
 }
 
-
 ROLE_PERMISSIONS = {
     "physician": [
         "view_assigned_records",
@@ -47,6 +46,7 @@ ROLE_PERMISSIONS = {
         "write_prescriptions",
         "order_labs",
         "update_treatment_plan",
+        "upload_clinical_files",
         "view_prescriptions",
         "view_lab_results"
     ],
@@ -58,6 +58,7 @@ ROLE_PERMISSIONS = {
     ],
 
     "front_desk_admin": [
+        "view_limited_patient_info",
         "manage_appointments",
         "update_demographics"
     ],
@@ -92,6 +93,7 @@ ROLE_PERMISSIONS = {
         "manage_system_settings",
         "view_audit_logs",
         "view_security_alerts",
+        "view_limited_patient_info",
         "manage_appointments",
         "update_demographics"
     ],
@@ -102,7 +104,6 @@ ROLE_PERMISSIONS = {
         "download_own_documents"
     ]
 }
-
 
 def normalize_role(role):
     """
