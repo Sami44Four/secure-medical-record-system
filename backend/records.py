@@ -55,7 +55,84 @@ def deny_record_access(username, reason):
     return jsonify({"message": "Access denied"}), 403
 
 
-# Retrieve records based on the user's permissions
+def get_current_user(conn, username):
+    """
+    Retrieve the current user from the database.
+    """
+    return conn.execute("""
+        SELECT * FROM users WHERE username = ?
+    """, (username,)).fetchone()
+
+
+def patient_owns_record(user, record):
+    """
+    Check whether a patient user owns the requested medical record.
+
+    In this prototype, patient ownership is matched by full name because the
+    original database does not yet include a separate patient-user mapping table.
+    A production system should use stable patient IDs instead of names.
+    """
+    if not user:
+        return False
+
+    return user["full_name"] == record["patient_name"]
+
+
+def clinical_user_can_access_record(user, record, normalized_role):
+    """
+    Check whether a clinical user has a valid relationship to a patient record.
+
+    This is a first-stage patient relationship check for the educational prototype.
+
+    Current relationship logic:
+    - Physicians and nurse practitioners can access records where they are listed
+      as the assigned provider.
+    - Registered nurses can access nurse-level records as a temporary care-team
+      relationship model.
+    - Future versions should replace this with a patient_assignments table.
+    """
+    if not user:
+        return False
+
+    provider_name = user["full_name"]
+    assigned_provider = record["doctor_assigned"] if "doctor_assigned" in record.keys() else ""
+
+    # Physicians and nurse practitioners must be assigned to the patient record.
+    if normalized_role in ["physician", "nurse_practitioner"]:
+        return assigned_provider == provider_name
+
+    # Registered nurses can access nurse-level records only.
+    # This is a simplified prototype version of care-team access.
+    if normalized_role == "registered_nurse":
+        return record["access_level"] == "nurse"
+
+    return False
+
+
+def filter_records_by_relationship(records, user, normalized_role, username):
+    """
+    Filter medical records so users only receive records they are allowed to access.
+    """
+    authorized_records = []
+    denied_count = 0
+
+    for record in records:
+        if clinical_user_can_access_record(user, record, normalized_role):
+            authorized_records.append(record)
+        else:
+            denied_count += 1
+
+    if denied_count > 0:
+        add_log(
+            username,
+            f"{normalized_role} was denied access to {denied_count} unassigned medical record(s)",
+            "Denied"
+        )
+
+    return authorized_records
+
+
+# Retrieve records based on the user's permissions and patient relationship
 def get_records():
     role = request.headers.get("Role")
     username = request.headers.get("Username", "unknown")
@@ -67,22 +144,33 @@ def get_records():
     conn = get_db_connection()
 
     try:
+        user = get_current_user(conn, username)
+
+        if not user:
+            add_log(username, "Record access failed: user not found", "Denied")
+            return jsonify({"message": "User not found"}), 404
+
         # Patients can only view their own records
         if has_permission(normalized_role, "view_own_records"):
-            user = conn.execute("""
-                SELECT full_name FROM users WHERE username = ?
-            """, (username,)).fetchone()
-
-            if not user:
-                add_log(username, "Patient record lookup failed", "Denied")
-                return jsonify({"message": "Patient not found"}), 404
-
             records = conn.execute("""
                 SELECT * FROM medical_records
-                WHERE patient_name = ?
-            """, (user["full_name"],)).fetchall()
+            """).fetchall()
 
-            formatted_records = [format_record(record) for record in records]
+            authorized_records = [
+                record for record in records
+                if patient_owns_record(user, record)
+            ]
+
+            denied_count = len(records) - len(authorized_records)
+
+            if denied_count > 0:
+                add_log(
+                    username,
+                    f"Patient denied access to {denied_count} record(s) belonging to other patients",
+                    "Denied"
+                )
+
+            formatted_records = [format_record(record) for record in authorized_records]
 
             add_log(
                 username,
@@ -92,33 +180,27 @@ def get_records():
 
             return jsonify(formatted_records)
 
-        # Clinical users can view authorized records.
-        # NOTE: Patient assignment checks will be added in a later issue.
+        # Clinical users can only view records where they have a valid patient relationship.
         if has_permission(normalized_role, "view_assigned_records"):
-            if normalized_role == "registered_nurse":
-                records = conn.execute("""
-                    SELECT * FROM medical_records
-                    WHERE access_level = 'nurse'
-                """).fetchall()
+            records = conn.execute("""
+                SELECT * FROM medical_records
+            """).fetchall()
 
-                add_log(
-                    username,
-                    "Registered nurse accessed nurse-level medical records",
-                    "Success"
-                )
+            authorized_records = filter_records_by_relationship(
+                records,
+                user,
+                normalized_role,
+                username
+            )
 
-            else:
-                records = conn.execute("""
-                    SELECT * FROM medical_records
-                """).fetchall()
+            formatted_records = [format_record(record) for record in authorized_records]
 
-                add_log(
-                    username,
-                    f"{normalized_role} accessed clinical medical records",
-                    "Success"
-                )
+            add_log(
+                username,
+                f"{normalized_role} accessed {len(authorized_records)} assigned medical record(s)",
+                "Success"
+            )
 
-            formatted_records = [format_record(record) for record in records]
             return jsonify(formatted_records)
 
         # Administrative users can view limited demographic/result-status information.
