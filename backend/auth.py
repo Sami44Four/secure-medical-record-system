@@ -9,6 +9,19 @@ from backend.logs import add_log
 from backend.permissions import get_permissions_for_role, normalize_role
 
 
+def get_account_status(user):
+    """
+    Return the user's account status.
+
+    Older versions of the database may not have account_status yet,
+    so this safely defaults existing demo users to approved.
+    """
+    if "account_status" in user.keys():
+        return user["account_status"] or "approved"
+
+    return "approved"
+
+
 # Handle user login requests
 def login():
     # Get login data from the request body
@@ -31,6 +44,19 @@ def login():
     # Verify password and return user information
     if user and check_password_hash(user["password_hash"], password):
 
+        account_status = get_account_status(user)
+
+        if account_status != "approved":
+            add_log(
+                username,
+                f"Login blocked for account with status: {account_status}",
+                "Denied"
+            )
+
+            return jsonify({
+                "message": f"Account access denied. Account status is {account_status}."
+            }), 403
+
         role = user["role"]
         normalized_role = normalize_role(role)
         permissions = get_permissions_for_role(role)
@@ -45,6 +71,7 @@ def login():
                 "role": role,
                 "normalizedRole": normalized_role,
                 "permissions": permissions,
+                "accountStatus": account_status,
                 "fullName": user["full_name"],
                 "department": user["department"],
                 "employeeId": user["employee_id"],
