@@ -5,10 +5,14 @@ from werkzeug.security import check_password_hash
 from backend.db import get_db_connection
 from backend.logs import add_log
 
+# Permission helpers
+from backend.permissions import get_permissions_for_role, normalize_role
+
+
 # Handle user login requests
 def login():
     # Get login data from the request body
-    data = request.get_json()
+    data = request.get_json() or {}
 
     username = data.get("username")
     password = data.get("password")
@@ -27,14 +31,20 @@ def login():
     # Verify password and return user information
     if user and check_password_hash(user["password_hash"], password):
 
+        role = user["role"]
+        normalized_role = normalize_role(role)
+        permissions = get_permissions_for_role(role)
+
         # Log successful login
-        add_log(username, f"{user['role']} logged in successfully", "Success")
+        add_log(username, f"{normalized_role} logged in successfully", "Success")
 
         return jsonify({
             "message": "Login successful",
             "user": {
                 "username": user["username"],
-                "role": user["role"],
+                "role": role,
+                "normalizedRole": normalized_role,
+                "permissions": permissions,
                 "fullName": user["full_name"],
                 "department": user["department"],
                 "employeeId": user["employee_id"],
