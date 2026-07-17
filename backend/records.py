@@ -123,7 +123,7 @@ def get_records():
 
         # Administrative users can view limited demographic/result-status information.
         # They should not automatically receive full clinical record access.
-        if has_permission(normalized_role, "update_demographics") or has_permission(normalized_role, "manage_appointments"):
+        if has_permission(normalized_role, "view_limited_patient_info"):
             records = conn.execute("""
                 SELECT * FROM medical_records
             """).fetchall()
