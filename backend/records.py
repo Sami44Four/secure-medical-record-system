@@ -1,6 +1,9 @@
 from flask import request, jsonify
+
 from backend.logs import add_log
 from backend.db import get_db_connection
+from backend.permissions import has_permission, normalize_role
+
 
 # Convert a database record into API response format
 def format_record(record):
@@ -25,79 +28,121 @@ def format_record(record):
         "notes": record["doctor_notes"] if "doctor_notes" in record.keys() else "No provider notes available."
     }
 
-# Retrieve records based on the user's role
+
+def mask_clinical_information(record):
+    """
+    Return a limited version of a medical record for administrative users.
+
+    Administrative users may need demographic, appointment, or result-status information,
+    but they should not automatically receive access to detailed clinical notes,
+    diagnoses, or medication information.
+    """
+    item = format_record(record)
+
+    item["diagnosis"] = "Hidden from administrative role"
+    item["medication"] = "Hidden from administrative role"
+    item["notes"] = "Clinical notes hidden. Administrative users can only verify demographics, appointments, and result status."
+    item["summary"] = "Basic demographic and result-status view only."
+
+    return item
+
+
+def deny_record_access(username, reason):
+    """
+    Log and return a denied access response.
+    """
+    add_log(username, reason, "Denied")
+    return jsonify({"message": "Access denied"}), 403
+
+
+# Retrieve records based on the user's permissions
 def get_records():
     role = request.headers.get("Role")
     username = request.headers.get("Username", "unknown")
+    normalized_role = normalize_role(role)
+
+    if not normalized_role:
+        return deny_record_access(username, "Missing role attempted record access")
 
     conn = get_db_connection()
 
-    # Doctors can view all records
-    if role == "doctor":
-        records = conn.execute("""
-            SELECT * FROM medical_records
-        """).fetchall()
+    try:
+        # Patients can only view their own records
+        if has_permission(normalized_role, "view_own_records"):
+            user = conn.execute("""
+                SELECT full_name FROM users WHERE username = ?
+            """, (username,)).fetchone()
 
-    # Nurses can only view nurse-level records
-    elif role == "nurse":
-        records = conn.execute("""
-            SELECT * FROM medical_records
-            WHERE access_level = 'nurse'
-        """).fetchall()
+            if not user:
+                add_log(username, "Patient record lookup failed", "Denied")
+                return jsonify({"message": "Patient not found"}), 404
 
-    # Admins can view limited patient information
-    elif role == "admin":
-        records = conn.execute("""
-            SELECT * FROM medical_records
-        """).fetchall()
+            records = conn.execute("""
+                SELECT * FROM medical_records
+                WHERE patient_name = ?
+            """, (user["full_name"],)).fetchall()
 
-        add_log(
+            formatted_records = [format_record(record) for record in records]
+
+            add_log(
+                username,
+                "Patient accessed own medical records",
+                "Success"
+            )
+
+            return jsonify(formatted_records)
+
+        # Clinical users can view authorized records.
+        # NOTE: Patient assignment checks will be added in a later issue.
+        if has_permission(normalized_role, "view_assigned_records"):
+            if normalized_role == "registered_nurse":
+                records = conn.execute("""
+                    SELECT * FROM medical_records
+                    WHERE access_level = 'nurse'
+                """).fetchall()
+
+                add_log(
+                    username,
+                    "Registered nurse accessed nurse-level medical records",
+                    "Success"
+                )
+
+            else:
+                records = conn.execute("""
+                    SELECT * FROM medical_records
+                """).fetchall()
+
+                add_log(
+                    username,
+                    f"{normalized_role} accessed clinical medical records",
+                    "Success"
+                )
+
+            formatted_records = [format_record(record) for record in records]
+            return jsonify(formatted_records)
+
+        # Administrative users can view limited demographic/result-status information.
+        # They should not automatically receive full clinical record access.
+        if has_permission(normalized_role, "update_demographics") or has_permission(normalized_role, "manage_appointments"):
+            records = conn.execute("""
+                SELECT * FROM medical_records
+            """).fetchall()
+
+            formatted_records = [mask_clinical_information(record) for record in records]
+
+            add_log(
+                username,
+                f"{normalized_role} accessed limited administrative patient view",
+                "Warning"
+            )
+
+            return jsonify(formatted_records)
+
+        # If the user does not have a valid permission, deny by default.
+        return deny_record_access(
             username,
-            "Admin accessed patient demographic/result status view",
-            "Warning"
+            f"{normalized_role} attempted record access without required permission"
         )
 
-        # Hide sensitive clinical information
-        formatted = []
-        for record in records:
-            item = format_record(record)
-            item["diagnosis"] = "Hidden from admin/front desk role"
-            item["medication"] = "Hidden from admin/front desk role"
-            item["notes"] = "Clinical notes hidden. Admin can only verify demographics, appointments, and result status."
-            item["summary"] = "Basic demographic and result-status view only."
-            formatted.append(item)
-
+    finally:
         conn.close()
-        return jsonify(formatted)
-
-    # Patients can only view their own records
-    elif role == "patient":
-        user = conn.execute("""
-            SELECT full_name FROM users WHERE username = ?
-        """, (username,)).fetchone()
-
-        if not user:
-            conn.close()
-            add_log(username, "Patient record lookup failed", "Denied")
-            return jsonify({"message": "Patient not found"}), 404
-
-        records = conn.execute("""
-            SELECT * FROM medical_records
-            WHERE patient_name = ?
-        """, (user["full_name"],)).fetchall()
-
-    # Reject unknown roles
-    else:
-        conn.close()
-        add_log(username, "Unauthorized role attempted record access", "Denied")
-        return jsonify({"message": "Unauthorized role"}), 403
-
-    # Format records for API response
-    formatted_records = [format_record(record) for record in records]
-
-    conn.close()
-
-    # Log successful access
-    add_log(username, f"Fetched records for role: {role}", "Success")
-
-    return jsonify(formatted_records)
